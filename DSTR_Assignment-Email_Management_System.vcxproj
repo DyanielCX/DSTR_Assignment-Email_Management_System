@@ -129,6 +129,10 @@
   <ItemGroup>
     <ClCompile Include="DSTR_Assignment-Email_Management_System.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="email.txt" />
+    <Text Include="user.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
