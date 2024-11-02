@@ -1,60 +1,84 @@
-#include "MainMenu.h"
+#include "EditProfile.h"
 #include "Utils.h"
 #include <iostream>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <thread>
 
-void displayMainMenu() {
+using namespace std;
+
+void displayMainMenu(const string& userEmail) {
     bool isRunning = true;
+    ProfileEditor profileEditor;
 
     while (isRunning) {
         clearscreen();
-        std::cout << "\033[36m";
-        std::cout << "**************************************************\n";
-        std::cout << "*                   Main Menu                    *\n";
-        std::cout << "**************************************************\n";
-        std::cout << "\033[0m";
-        std::cout << "1. Inbox Management\n";
-        std::cout << "2. Outbox Management\n";
-        std::cout << "3. Search and Retrieval\n";
-        std::cout << "4. Spam Messages\n";
-        std::cout << "5. Edit Profile\n";
-        std::cout << "6. Log Out\n";
-        std::cout << "Choose an option: ";
+
+        // Display the Main Menu
+        cout << "\033[36m";
+        cout << "**************************************************\n";
+        cout << "*                   Email System                 *\n";
+        cout << "**************************************************\n";
+        cout << "\033[0m";
+        cout << "\033[33mLogged in as: " << userEmail << "\033[0m\n";
+
+        // Display current time using localtime_s to avoid C4996 warning
+        auto now = chrono::system_clock::now();
+        time_t currentTime = chrono::system_clock::to_time_t(now);
+        tm localTime;
+
+#ifdef _WIN32
+        localtime_s(&localTime, &currentTime); // Safe version for Windows
+#else
+        localtime_r(&currentTime, &localTime); // POSIX-compliant for Linux/Unix
+#endif
+
+        cout << "\033[33mCurrent Time: " << put_time(&localTime, "%Y-%m-%d %H:%M:%S") << "\033[0m\n";
+        cout << "--------------------------------------------------\n";
+
+        // Display menu options
+        cout << "1. Inbox Management\n";
+        cout << "2. Outbox Management\n";
+        cout << "3. Search and Retrieval\n";
+        cout << "4. Spam Messages\n";
+        cout << "5. Edit Profile\n";
+        cout << "6. Log Out\n";
+        cout << "Choose an option: ";
 
         int choice;
-        std::cin >> choice;
+        cin >> choice;
 
+        clearscreen();
+
+        // Handle user choice
         switch (choice) {
         case 1:
-            std::cout << "Inbox Management selected.\n";
+            cout << "Inbox Management selected.\n";
             break;
         case 2:
-            std::cout << "Outbox Management selected.\n";
+            cout << "Outbox Management selected.\n";
             break;
         case 3:
-            std::cout << "Search and Retrieval selected.\n";
+            cout << "Search and Retrieval selected.\n";
             break;
         case 4:
-            std::cout << "Spam Messages selected.\n";
+            cout << "Spam Messages selected.\n";
             break;
         case 5:
-            std::cout << "Edit Profile selected.\n";
+            profileEditor.editProfileMenu(userEmail); // Open Edit Profile menu
             break;
         case 6:
-            std::cout << "Logging out...\n";
+            cout << "Logging out...\n";
+            this_thread::sleep_for(chrono::seconds(1));
             isRunning = false;
             break;
         default:
-            std::cout << "\033[31mInvalid choice. Please try again.\033[0m\n";
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            cout << "\033[31mInvalid choice. Please try again.\033[0m\n";
+            this_thread::sleep_for(chrono::seconds(1));
             break;
         }
 
-        if (isRunning) {
-            std::cout << "Press Enter to return to the main menu...";
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cin.get();
-        }
+        
     }
 }

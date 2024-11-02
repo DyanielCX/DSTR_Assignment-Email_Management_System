@@ -10,18 +10,20 @@
 #include "Utils.h" 
 #include "MainMenu.h" 
 
+using namespace std;
+
 // Color definitions
-const std::string color_reset = "\033[0m";
-const std::string color_red = "\033[31m";
-const std::string color_green = "\033[32m";
-const std::string color_yellow = "\033[33m";
-const std::string color_cyan = "\033[36m";
-const std::string color_blue = "\033[34m";
+const string color_reset = "\033[0m";
+const string color_red = "\033[31m";
+const string color_green = "\033[32m";
+const string color_yellow = "\033[33m";
+const string color_cyan = "\033[36m";
+const string color_blue = "\033[34m";
 
 // Account and Node structure for the hash table
 struct Account {
-    std::string email;
-    std::string password;
+    string email;
+    string password;
 };
 
 struct Node {
@@ -37,7 +39,7 @@ private:
     static const int table_size = 100;
     Node* table[table_size] = { nullptr };
 
-    int hash(const std::string& email) const {
+    int hash(const string& email) const {
         int hashvalue = 0;
         for (char ch : email) {
             hashvalue = (hashvalue * 31 + ch) % table_size;
@@ -75,7 +77,7 @@ public:
         return true;
     }
 
-    Node* find(const std::string& email) const {
+    Node* find(const string& email) const {
         int index = hash(email);
         Node* current = table[index];
         while (current != nullptr) {
@@ -94,19 +96,19 @@ private:
     CustomHashTable accountstable;
 
 public:
-    void loadAccountsFromFile(const std::string& filename) {
-        std::ifstream file(filename);
+    void loadAccountsFromFile(const string& filename) {
+        ifstream file(filename);
         if (!file.is_open()) {
-            std::cerr << color_red << "Error: Could not open file " << filename << color_reset << "\n";
+            cerr << color_red << "Error: Could not open file " << filename << color_reset << "\n";
             return;
         }
 
-        std::string line;
-        while (std::getline(file, line)) {
-            std::istringstream iss(line);
-            std::string email, password;
+        string line;
+        while (getline(file, line)) {
+            istringstream iss(line);
+            string email, password;
 
-            if (std::getline(iss, email, ',') && std::getline(iss, password)) {
+            if (getline(iss, email, ',') && getline(iss, password)) {
                 email.erase(0, email.find_first_not_of(" \t"));
                 email.erase(email.find_last_not_of(" \t") + 1);
                 password.erase(0, password.find_first_not_of(" \t"));
@@ -118,74 +120,74 @@ public:
         file.close();
     }
 
-    bool authenticate(const std::string& email, const std::string& password) {
+    bool authenticate(const string& email, const string& password) {
         Node* node = accountstable.find(email);
         return node != nullptr && node->account.password == password;
     }
 
-    bool signUp(const std::string& filename) {
-        std::string email, password, confirmPassword;
+    bool signUp(const string& filename) {
+        string email, password, confirmPassword;
 
         while (true) {
             clearscreen();
 
-            std::cout << color_cyan;
-            std::cout << "**************************************************\n";
-            std::cout << "*                   Sign Up                      *\n";
-            std::cout << "**************************************************\n" << color_reset;
-            std::cout << "Please enter your details below to create an account.\n";
-            std::cout << "Type '" << color_yellow << "back" << color_reset << "' in the email field to return to the main menu.\n\n";
+            cout << color_cyan;
+            cout << "**************************************************\n";
+            cout << "*                   Sign Up                      *\n";
+            cout << "**************************************************\n" << color_reset;
+            cout << "Please enter your details below to create an account.\n";
+            cout << "Type '" << color_yellow << "back" << color_reset << "' in the email field to return to the main menu.\n\n";
 
-            std::cout << color_blue << "Email: " << color_reset;
-            std::cin >> email;
+            cout << color_blue << "Email: " << color_reset;
+            cin >> email;
 
             if (email == "back") {
-                std::cout << color_green << "Returning to the main menu..." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                cout << color_green << "Returning to the main menu..." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(1));
                 return false;
             }
 
-            if (email.find('@') == std::string::npos || email.find('.') == std::string::npos) {
-                std::cerr << color_red << "Invalid email format. Please include '@' and a domain." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(2));
+            if (email.find('@') == string::npos || email.find('.') == string::npos) {
+                cerr << color_red << "Invalid email format. Please include '@' and a domain." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(2));
                 continue;
             }
             else if (accountstable.find(email) != nullptr) {
-                std::cerr << color_red << "Error: Account with this email already exists. Please enter a different email." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(2));
+                cerr << color_red << "Error: Account with this email already exists. Please enter a different email." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(2));
                 continue;
             }
 
-            std::cout << color_blue << "Password (min 6 characters): " << color_reset;
-            std::cin >> password;
+            cout << color_blue << "Password (min 6 characters): " << color_reset;
+            cin >> password;
 
             if (password.length() < 6) {
-                std::cerr << color_red << "Password must be at least 6 characters long." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(2));
+                cerr << color_red << "Password must be at least 6 characters long." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(2));
                 continue;
             }
 
-            std::cout << color_blue << "Confirm Password: " << color_reset;
-            std::cin >> confirmPassword;
+            cout << color_blue << "Confirm Password: " << color_reset;
+            cin >> confirmPassword;
 
             if (password != confirmPassword) {
-                std::cerr << color_red << "Passwords do not match. Please try again." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(2));
+                cerr << color_red << "Passwords do not match. Please try again." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(2));
                 continue;
             }
 
             accountstable.insert({ email, password });
 
-            std::ofstream file(filename, std::ios::app);
+            ofstream file(filename, ios::app);
             if (!file.is_open()) {
-                std::cerr << color_red << "Error: Could not open file " << filename << " to save the new account." << color_reset << "\n";
+                cerr << color_red << "Error: Could not open file " << filename << " to save the new account." << color_reset << "\n";
                 return false;
             }
             file << email << ", " << password << "\n";
             file.close();
 
-            std::cout << color_green << "\nAccount created successfully! You can now log in with your new credentials." << color_reset << "\n";
-            std::this_thread::sleep_for(std::chrono::seconds(2));
+            cout << color_green << "\nAccount created successfully! You can now log in with your new credentials." << color_reset << "\n";
+            this_thread::sleep_for(chrono::seconds(2));
 
             clearscreen();
             return true;
@@ -195,26 +197,26 @@ public:
     void loginPage() {
         while (true) {
             clearscreen();
-            std::cout << color_yellow;
-            std::cout << "**************************************************\n";
-            std::cout << "*                 Email System                   *\n";
-            std::cout << "**************************************************\n" << color_reset;
+            cout << color_yellow;
+            cout << "**************************************************\n";
+            cout << "*                 Email System                   *\n";
+            cout << "**************************************************\n" << color_reset;
 
-            std::cout << "\n" << color_blue << "1. Sign Up\n";
-            std::cout << "2. Log In\n";
-            std::cout << "3. Exit\n" << color_reset;
-            std::cout << "Choose an option: ";
+            cout << "\n" << color_blue << "1. Sign Up\n";
+            cout << "2. Log In\n";
+            cout << "3. Exit\n" << color_reset;
+            cout << "Choose an option: ";
 
-            std::string choiceStr;
+            string choiceStr;
             int choice;
-            std::cin >> choiceStr;
+            cin >> choiceStr;
 
             try {
-                choice = std::stoi(choiceStr);
+                choice = stoi(choiceStr);
             }
             catch (...) {
-                std::cout << color_red << "Invalid input. Please enter a valid number." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                cout << color_red << "Invalid input. Please enter a valid number." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(1));
                 continue;
             }
 
@@ -225,79 +227,80 @@ public:
                 clearscreen();
                 const int maxAttempts = 3;
                 int loginAttempts = 0;
-                std::string email, password;
+                string email, password;
 
                 while (loginAttempts < maxAttempts) {
                     clearscreen();
-                    std::cout << color_cyan;
-                    std::cout << "**************************************************\n";
-                    std::cout << "*                   Log In                       *\n";
-                    std::cout << "**************************************************\n" << color_reset;
-                    std::cout << "Please enter your details below to log in.\n";
-                    std::cout << "Type '" << color_yellow << "back" << color_reset << "' in the email field to return to the main menu.\n";
+                    cout << color_cyan;
+                    cout << "**************************************************\n";
+                    cout << "*                   Log In                       *\n";
+                    cout << "**************************************************\n" << color_reset;
+                    cout << "Please enter your details below to log in.\n";
+                    cout << "Type '" << color_yellow << "back" << color_reset << "' in the email field to return to the main menu.\n";
 
                     if (loginAttempts > 0) {
-                        std::cout << "Remaining chances: " << color_cyan << (maxAttempts - loginAttempts) << color_reset << "\n\n";
+                        cout << "Remaining chances: " << color_cyan << (maxAttempts - loginAttempts) << color_reset << "\n\n";
                     }
 
-                    std::cout << "Email: ";
-                    std::cin >> email;
+                    cout << "Email: ";
+                    cin >> email;
 
                     if (email == "back") {
                         break; // Go back to the main menu if "back" is entered
                     }
 
                     // Validate email format
-                    if (email.find('@') == std::string::npos || email.find('.') == std::string::npos) {
-                        std::cerr << color_red << "Invalid email format. Please include '@' and a domain." << color_reset << "\n";
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                    if (email.find('@') == string::npos || email.find('.') == string::npos) {
+                        cerr << color_red << "Invalid email format. Please include '@' and a domain." << color_reset << "\n";
+                        this_thread::sleep_for(chrono::seconds(2));
                         continue; // Restart the login prompt
                     }
 
-                    std::cout << "Password: ";
-                    std::cin >> password;
+                    cout << "Password: ";
+                    cin >> password;
 
                     // Validate password length
                     if (password.length() < 6) {
-                        std::cerr << color_red << "Password must be at least 6 characters long." << color_reset << "\n";
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        cerr << color_red << "Password must be at least 6 characters long." << color_reset << "\n";
+                        this_thread::sleep_for(chrono::seconds(2));
                         continue; // Restart the login prompt
                     }
 
                     // Check if the credentials are correct
                     if (authenticate(email, password)) {
                         clearscreen();
-                        std::cout << color_green << "\n\nAccess granted!\nWelcome, " << email << "!" << color_reset << "\n";
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                        cout << color_green << "\n\nAccess granted!\nWelcome, " << email << "!" << color_reset << "\n";
+                        this_thread::sleep_for(chrono::seconds(1));
 
                         // Call the main menu after successful login
-                        displayMainMenu();
+                        displayMainMenu(email);
+
                         return; // Exit the loginPage function after the user logs out
                     }
                     else {
                         loginAttempts++;
-                        std::cerr << color_red << "\nInvalid credentials." << color_reset << "\n";
+                        cerr << color_red << "\nInvalid credentials." << color_reset << "\n";
                         if (loginAttempts < maxAttempts) {
-                            std::cout << "Remaining chances: " << color_cyan << (maxAttempts - loginAttempts) << color_reset << "\n";
-                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            cout << "Remaining chances: " << color_cyan << (maxAttempts - loginAttempts) << color_reset << "\n";
+                            this_thread::sleep_for(chrono::seconds(2));
                         }
                     }
                 }
 
                 // If maximum attempts are reached, deny access and go back to the main menu
                 if (loginAttempts >= maxAttempts) {
-                    std::cerr << color_red << "Too many failed attempts. Access denied." << color_reset << "\n";
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    cerr << color_red << "Too many failed attempts. Access denied." << color_reset << "\n";
+                    this_thread::sleep_for(chrono::seconds(2));
                 }
             }
             else if (choice == 3) {
                 clearscreen();
-                std::cout << color_green << "Exiting the system. Goodbye!" << color_reset << "\n";
+                cout << color_green << "Exiting the system. Goodbye!" << color_reset << "\n";
                 break;
             }
             else {
-                std::cout << color_red << "Invalid option. Please try again." << color_reset << "\n";
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                cout << color_red << "Invalid option. Please try again." << color_reset << "\n";
+                this_thread::sleep_for(chrono::seconds(1));
             }
         }
     }

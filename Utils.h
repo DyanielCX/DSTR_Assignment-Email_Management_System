@@ -1,9 +1,9 @@
+// Utils.h
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <cstdlib>  // For system()
+#include <cstdlib>
 
-// Cross-platform clear screen function
 inline void clearscreen() {
 #ifdef _WIN32
     system("cls");

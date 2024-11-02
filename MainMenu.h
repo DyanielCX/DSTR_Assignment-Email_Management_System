@@ -1,6 +1,10 @@
 #ifndef MAINMENU_H
 #define MAINMENU_H
 
-void displayMainMenu();  // Declaration only
+#include <iostream>
+
+using namespace std;
+
+void displayMainMenu(const string& userEmail);
 
 #endif // MAINMENU_H
