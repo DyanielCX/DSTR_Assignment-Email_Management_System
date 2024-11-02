@@ -1,9 +1,8 @@
+#include "AccountSystem.h"
 
-
-#include <iostream>
-
-int main()
-{
-    std::cout << "Hello World!\n";
+int main() {
+    AccountManagement accountManager;
+    accountManager.loadAccountsFromFile("user.txt"); // Load accounts from file
+    accountManager.loginPage(); // Start login process
+    return 0;
 }
-

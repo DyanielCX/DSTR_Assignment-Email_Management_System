@@ -128,10 +128,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DSTR_Assignment-Email_Management_System.cpp" />
+    <ClCompile Include="MainMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="email.txt" />
     <Text Include="user.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AccountSystem.h" />
+    <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
