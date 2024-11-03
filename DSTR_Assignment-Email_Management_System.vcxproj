@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="AccountSystem.h" />
     <ClInclude Include="EditProfile.h" />
+    <ClInclude Include="InboxManager.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

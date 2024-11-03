@@ -1,4 +1,5 @@
 #include "EditProfile.h"
+#include "InboxManager.h"
 #include "Utils.h"
 #include <iostream>
 #include <chrono>
@@ -11,6 +12,7 @@ using namespace std;
 void displayMainMenu(const string& userEmail) {
     bool isRunning = true;
     ProfileEditor profileEditor;
+    InboxManager inboxManager;
 
     while (isRunning) {
         clearscreen();
@@ -55,6 +57,7 @@ void displayMainMenu(const string& userEmail) {
         switch (choice) {
         case 1:
             cout << "Inbox Management selected.\n";
+            inboxManager.displayInbox(userEmail);
             break;
         case 2:
             cout << "Outbox Management selected.\n";
