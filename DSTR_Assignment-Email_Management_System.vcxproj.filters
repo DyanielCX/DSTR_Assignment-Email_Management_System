@@ -29,6 +29,9 @@
     <Text Include="email.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="spam.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccountSystem.h">
