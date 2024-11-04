@@ -1,4 +1,4 @@
-// InboxManager.h
+// InboxManager.hpp
 #ifndef INBOX_MANAGER_H
 #define INBOX_MANAGER_H
 

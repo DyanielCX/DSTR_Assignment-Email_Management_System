@@ -1,6 +1,6 @@
-#include "EditProfile.h"
-#include "InboxManager.h"
-#include "Utils.h"
+#include "EditProfile.hpp"
+#include "InboxManager.hpp"
+#include "Utils.hpp"
 #include <iostream>
 #include <chrono>
 #include <ctime>

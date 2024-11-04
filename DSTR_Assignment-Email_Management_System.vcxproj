@@ -136,11 +136,11 @@
     <Text Include="user.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AccountSystem.h" />
-    <ClInclude Include="EditProfile.h" />
-    <ClInclude Include="InboxManager.h" />
-    <ClInclude Include="MainMenu.h" />
-    <ClInclude Include="Utils.h" />
+    <ClInclude Include="AccountSystem.hpp" />
+    <ClInclude Include="EditProfile.hpp" />
+    <ClInclude Include="InboxManager.hpp" />
+    <ClInclude Include="MainMenu.hpp" />
+    <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

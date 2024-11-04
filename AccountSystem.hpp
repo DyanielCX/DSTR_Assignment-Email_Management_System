@@ -7,8 +7,8 @@
 #include <string>
 #include <chrono>
 #include <thread>
-#include "Utils.h" 
-#include "MainMenu.h" 
+#include "Utils.hpp" 
+#include "MainMenu.hpp" 
 
 using namespace std;
 
