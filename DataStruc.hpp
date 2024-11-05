@@ -6,7 +6,6 @@
 using namespace std;
 
 struct Email {
-    int id;
     string subject;
     string sender;
     string receiver;

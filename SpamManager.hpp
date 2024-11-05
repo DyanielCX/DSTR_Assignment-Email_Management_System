@@ -87,8 +87,6 @@ private:
 
             // Parse each field correctly
             string idStr, isSpamStr;
-            getline(iss, idStr, ',');
-            newEmail->id = stoi(idStr);
             getline(iss, newEmail->subject, ',');
             getline(iss, newEmail->sender, ',');
             getline(iss, newEmail->receiver, ',');
@@ -178,8 +176,6 @@ private:
             istringstream iss(line);
             Email email;
             string idStr, isSpamStr;
-            getline(iss, idStr, ',');
-            email.id = stoi(idStr);
             getline(iss, email.subject, ',');
             getline(iss, email.sender, ',');
             getline(iss, email.receiver, ',');
@@ -189,23 +185,11 @@ private:
             getline(iss, isSpamStr);
             email.isSpam = (isSpamStr == "1");
 
-            // Determine if this email is still in the spam linked list or was deleted
-            Email* current = head;
-            bool foundInList = false;
-
-            while (current != nullptr) {
-                if (current->id == email.id) {
-                    foundInList = true;
-                    break;
-                }
-                current = current->next;
-            }
-
             // Write the email to the output file if:
             // - The email is not a spam (leave it as it is)
             // - The email is in the linked list (which means it was not deleted)
-            if (!email.isSpam || foundInList) {
-                outFile << email.id << "," << email.subject << "," << email.sender << ","
+            if (!email.isSpam) {
+                outFile << email.subject << "," << email.sender << ","
                     << email.receiver << "," << email.date << "," << email.time << ","
                     << email.content << "," << (email.isSpam ? "1" : "0") << "\n";
             }

@@ -1,5 +1,5 @@
-#ifndef INBOX_MANAGER_H
-#define INBOX_MANAGER_H
+#ifndef INBOX_MANAGER_HPP
+#define INBOX_MANAGER_HPP
 
 #include <iostream>
 #include <fstream>
@@ -100,9 +100,7 @@ private:
             Email* newEmail = new Email();
 
             // Parse each field correctly
-            string idStr, isSpamStr;
-            getline(iss, idStr, ',');
-            newEmail->id = stoi(idStr);
+            string isSpamStr;
             getline(iss, newEmail->subject, ',');
             getline(iss, newEmail->sender, ',');
             getline(iss, newEmail->receiver, ',');
@@ -264,9 +262,7 @@ private:
         while (getline(emailFile, line)) {
             istringstream iss(line);
             Email email;
-            string idStr, isSpamStr;
-            getline(iss, idStr, ',');
-            email.id = stoi(idStr);
+            string isSpamStr;
             getline(iss, email.subject, ',');
             getline(iss, email.sender, ',');
             getline(iss, email.receiver, ',');
@@ -278,8 +274,8 @@ private:
             // Check if this email belongs to the current user and if it needs to be saved
             if (email.receiver == userEmail) {
                 // Only save the email if it is still in the linked list
-                if (current != nullptr && current->id == email.id) {
-                    outFile << current->id << "," << current->subject << "," << current->sender << ","
+                if (current != nullptr) {
+                    outFile << current->subject << "," << current->sender << ","
                         << current->receiver << "," << current->date << "," << current->time << ","
                         << current->content << "," << (current->isSpam ? "1" : "0") << "\n";
                     current = current->next; // Move to the next email in the linked list
@@ -309,4 +305,4 @@ private:
     }
 };
 
-#endif // INBOX_MANAGER_H
+#endif // INBOX_MANAGER_HPP
