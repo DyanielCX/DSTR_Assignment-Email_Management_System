@@ -23,26 +23,44 @@ public:
             // Check for spam status but do not delete spam emails
             detectAndMarkSpam(head);
 
-            if (head == nullptr) {
+            // Check if there are any non-spam emails
+            bool hasNonSpamEmail = false;
+            int emailCount = 0;
+
+            for (Email* current = head; current != nullptr; current = current->next) {
+                if (!current->isSpam) {
+                    hasNonSpamEmail = true;
+                    emailCount++;
+                    cout << "---------------------------------------------\n";
+                    cout << "Email " << emailCount << ":\n";
+                    cout << "Subject: " << current->subject << "\n";
+                    cout << "Sender: " << current->sender << "\n";
+                    cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
+                    cout << "Content: " << current->content << "\n";
+                }
+            }
+
+            // If no non-spam emails were found, or if the list is empty, inform the user
+            if (!hasNonSpamEmail) {
                 cout << "No emails found for " << userEmail << ".\n";
-                break; // Exit the loop if there are no non-spam emails
+                char choice;
+                do {
+                    cout << "Enter 'm' to go back to the main menu: ";
+                    cin >> choice;
+                    if (choice == 'm' || choice == 'M') {
+                        inInboxMenu = false; // Set the flag to false to exit the loop
+                        return; // Return to ensure the function exits and does not continue
+                    }
+                    else {
+                        cout << "Invalid choice. Please try again.\n";
+                    }
+                } while (true);
             }
             else {
-                cout << "Inbox for " << userEmail << ":\n";
-                int emailCount = 0;
-                for (current = head; current != nullptr; current = current->next) {
-                    if (!current->isSpam) { // Only display non-spam emails for the current user
-                        emailCount++;
-                        cout << "---------------------------------------------\n";
-                        cout << "Email " << emailCount << ":\n";
-                        cout << "Subject: " << current->subject << "\n";
-                        cout << "Sender: " << current->sender << "\n";
-                        cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
-                        cout << "Content: " << current->content << "\n";
-                    }
-                }
                 cout << "---------------------------------------------\n";
             }
+
+
 
             // Offer options to the user
             char choice;
