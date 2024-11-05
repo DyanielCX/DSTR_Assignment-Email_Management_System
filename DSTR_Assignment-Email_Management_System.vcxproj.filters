@@ -34,19 +34,25 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AccountSystem.h">
+    <ClInclude Include="AccountSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MainMenu.h">
+    <ClInclude Include="EditProfile.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="InboxManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EditProfile.h">
+    <ClInclude Include="MainMenu.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InboxManager.h">
+    <ClInclude Include="Utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DataStruc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpamManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

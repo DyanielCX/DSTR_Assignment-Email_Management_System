@@ -137,9 +137,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccountSystem.hpp" />
+    <ClInclude Include="DataStruc.hpp" />
     <ClInclude Include="EditProfile.hpp" />
     <ClInclude Include="InboxManager.hpp" />
     <ClInclude Include="MainMenu.hpp" />
+    <ClInclude Include="SpamManager.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,5 +1,6 @@
 #include "EditProfile.hpp"
 #include "InboxManager.hpp"
+#include "SpamManager.hpp"
 #include "Utils.hpp"
 #include <iostream>
 #include <chrono>
@@ -13,6 +14,7 @@ void displayMainMenu(const string& userEmail) {
     bool isRunning = true;
     ProfileEditor profileEditor;
     InboxManager inboxManager;
+    SpamManager spamManager;
 
     while (isRunning) {
         clearscreen();
@@ -67,6 +69,7 @@ void displayMainMenu(const string& userEmail) {
             break;
         case 4:
             cout << "Spam Messages selected.\n";
+            spamManager.displaySpamEmails();
             break;
         case 5:
             profileEditor.editProfileMenu(userEmail); // Open Edit Profile menu

@@ -7,21 +7,9 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include "DataStruc.hpp"
 
 using namespace std;
-
-// Structure to represent an Email
-struct Email {
-    int id;
-    string subject;
-    string sender;
-    string receiver;
-    string date;
-    string time;
-    string content;
-    bool isSpam = false;
-    Email* next = nullptr; // Pointer to the next Email in the linked list
-};
 
 // Class to manage the inbox
 class InboxManager {
