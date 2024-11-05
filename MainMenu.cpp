@@ -1,7 +1,8 @@
-#include "EditProfile.hpp"
+#include "EmailCreator.hpp"
 #include "InboxManager.hpp"
 #include "OutboxManager.hpp"
 #include "SpamManager.hpp"
+#include "EditProfile.hpp"
 #include "Utils.hpp"
 #include <iostream>
 #include <chrono>
@@ -13,10 +14,11 @@ using namespace std;
 
 void displayMainMenu(const string& userEmail) {
     bool isRunning = true;
-    ProfileEditor profileEditor;
+    EmailCreator emailCreator;
     InboxManager inboxManager;
     OutboxManager outboxManager;
     SpamManager spamManager;
+    ProfileEditor profileEditor;
 
     while (isRunning) {
         clearscreen();
@@ -44,12 +46,13 @@ void displayMainMenu(const string& userEmail) {
         cout << "--------------------------------------------------\n";
 
         // Display menu options
-        cout << "1. Inbox Management\n";
-        cout << "2. Outbox Management\n";
-        cout << "3. Search and Retrieval\n";
-        cout << "4. Spam Messages\n";
-        cout << "5. Edit Profile\n";
-        cout << "6. Log Out\n";
+        cout << "1. Send Email\n";
+        cout << "2. Inbox Management\n";
+        cout << "3. Outbox Management\n";
+        cout << "4. Search and Retrieval\n";
+        cout << "5. Spam Messages\n";
+        cout << "6. Edit Profile\n";
+        cout << "7. Log Out\n";
         cout << "Choose an option: ";
 
         int choice;
@@ -60,24 +63,28 @@ void displayMainMenu(const string& userEmail) {
         // Handle user choice
         switch (choice) {
         case 1:
+            cout << "Send Email selected.\n";
+            emailCreator.displaySendEmail();
+            break;
+        case 2:
             cout << "Inbox Management selected.\n";
             inboxManager.displayInbox(userEmail);
             break;
-        case 2:
+        case 3:
             cout << "Outbox Management selected.\n";
             outboxManager.displayOutbox(userEmail);
             break;
-        case 3:
+        case 4:
             cout << "Search and Retrieval selected.\n";
             break;
-        case 4:
+        case 5:
             cout << "Spam Messages selected.\n";
             spamManager.displaySpamEmails();
             break;
-        case 5:
+        case 6:
             profileEditor.editProfileMenu(userEmail); // Open Edit Profile menu
             break;
-        case 6:
+        case 7:
             cout << "Logging out...\n";
             this_thread::sleep_for(chrono::seconds(1));
             isRunning = false;

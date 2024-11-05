@@ -7,7 +7,6 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
-#include "Utils.hpp"
 #include "DataStruc.hpp"
 
 using namespace std;
@@ -26,24 +25,39 @@ public:
             Email* front = emailQueue.getFront();
             detectAndMarkSpam(front);
 
+            // Check if there are any non-spam emails
+            bool hasNonSpamEmail = false;
+            int emailCount = 0;
+
+            for (Email* current = emailQueue.getFront(); current != nullptr; current = current->next) {
+                if (!current->isSpam) { // Only display non-spam emails for the current user
+                    emailCount++;
+                    cout << "---------------------------------------------\n";
+                    cout << "Email " << emailCount << ":\n";
+                    cout << "Subject: " << current->subject << "\n";
+                    cout << "Receiver: " << current->receiver << "\n";
+                    cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
+                    cout << "Content: " << current->content << "\n";
+                }
+            }
+
+            // If no non-spam emails were found, or if the list is empty, inform the user
             if (emailQueue.empty()) {
-                cout << "No non-spam emails found for " << userEmail << ".\n";
-                break; // Exit the loop if there are no non-spam emails
+                cout << "No emails found for " << userEmail << ".\n";
+                char choice;
+                do {
+                    cout << "Enter 'm' to go back to the main menu: ";
+                    cin >> choice;
+                    if (choice == 'm' || choice == 'M') {
+                        inOutboxMenu = false; // Exit the loop
+                        return;
+                    }
+                    else {
+                        cout << "Invalid choice. Please try again.\n";
+                    }
+                } while (true);
             }
             else {
-                cout << "Inbox for " << userEmail << ":\n";
-                int emailCount = 0;
-                for (Email* current = emailQueue.getFront(); current != nullptr; current = current->next) {
-                    if (!current->isSpam) { // Only display non-spam emails for the current user
-                        emailCount++;
-                        cout << "---------------------------------------------\n";
-                        cout << "Email " << emailCount << ":\n";
-                        cout << "Subject: " << current->subject << "\n";
-                        cout << "Sender: " << current->sender << "\n";
-                        cout << "Date: " << current->date << " Time: " << current->time << "\n";
-                        cout << "Content: " << current->content << "\n";
-                    }
-                }
                 cout << "---------------------------------------------\n";
             }
 
@@ -68,13 +82,26 @@ public:
             // Save the updated emails (including spam status) and free the linked list memory
             saveEmails(front, userEmail);
             emailQueue.clearQueue();
-
-            // Refresh screen
-            clearscreen();
         }
     }
 
 private:
+    // Function to format date from YYYYMMDD to YYYY-MM-DD
+    string formatDate(const string& date) {
+        if (date.length() != 8) {
+            return date; // Return as-is if not in expected format
+        }
+        return date.substr(0, 4) + "-" + date.substr(4, 2) + "-" + date.substr(6, 2);
+    }
+
+    // Function to format time from HHMMSS to HH:MM:SS
+    string formatTime(const string& time) {
+        if (time.length() != 6) {
+            return time; // Return as-is if not in expected format
+        }
+        return time.substr(0, 2) + ":" + time.substr(2, 2) + ":" + time.substr(4, 2);
+    }
+    
     // Function to load emails into a linked list, filtering only those for the current user
     void loadEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
@@ -131,6 +158,7 @@ private:
     void deleteEmail(const string& userEmail) {
         if (emailQueue.empty()) {
             cout << "No emails available to delete.\n";
+            return;
         }
 
         // Display the emails with index numbers to the user
@@ -162,27 +190,33 @@ private:
         Email* current = front;
         while (getline(emailFile, line)) {
             istringstream iss(line);
-            Email email;
-            string idStr, isSpamStr;
-            getline(iss, idStr, ',');
-            email.id = stoi(idStr);
-            getline(iss, email.subject, ',');
-            getline(iss, email.sender, ',');
-            getline(iss, email.receiver, ',');
-            getline(iss, email.date, ',');
-            getline(iss, email.time, ',');
-            getline(iss, email.content, ',');
+            string receiverDeletedStr, senderDeletedStr, subject, sender, receiver, date, time, content, isSpamStr;
+            getline(iss, receiverDeletedStr, ',');
+            getline(iss, senderDeletedStr, ',');
+            getline(iss, subject, ',');
+            getline(iss, sender, ',');
+            getline(iss, receiver, ',');
+            getline(iss, date, ',');
+            getline(iss, time, ',');
+            getline(iss, content, ',');
             getline(iss, isSpamStr);
 
-
             // Check if this email belongs to the current user and if it needs to be saved
-            if (email.sender == userEmail) {
-                // Only save the email if it is still in the linked list
-                if (current != nullptr && current->id == email.id) {
-                    outFile << current->id << "," << current->subject << "," << current->sender << ","
-                        << current->receiver << "," << current->date << "," << current->time << ","
-                        << current->content << "," << (current->isSpam ? "1" : "0") << "\n";
-                    current = current->next; // Move to the next email in the queue
+            if (sender == userEmail) {
+                // Update the `receiverDeleted` flag if the email is found in the linked list
+                if (current != nullptr && current->subject == subject && current->sender == sender &&
+                    current->receiver == receiver && current->date == date && current->time == time &&
+                    current->content == content) {
+                    outFile << receiverDeletedStr << ","<< (current->senderDeleted ? "1" : "0") << "," 
+                        << subject << "," << sender << ","
+                        << receiver << "," << date << "," << time << ","
+                        << content << "," << isSpamStr << "\n";
+                    current = current->next;
+                }
+                else {
+                    outFile << receiverDeletedStr << "," << senderDeletedStr << ","
+                        << subject << "," << sender << "," << receiver << ","
+                        << date << "," << time << "," << content << "," << isSpamStr << "\n";
                 }
             }
             else {

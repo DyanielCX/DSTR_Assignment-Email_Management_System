@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include "Utils.hpp"
 #include "DataStruc.hpp"
 
 using namespace std;

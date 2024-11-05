@@ -139,6 +139,7 @@
     <ClInclude Include="AccountSystem.hpp" />
     <ClInclude Include="DataStruc.hpp" />
     <ClInclude Include="EditProfile.hpp" />
+    <ClInclude Include="EmailCreator.hpp" />
     <ClInclude Include="InboxManager.hpp" />
     <ClInclude Include="MainMenu.hpp" />
     <ClInclude Include="OutboxManager.hpp" />

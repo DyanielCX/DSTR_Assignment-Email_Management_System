@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "Utils.hpp"
 using namespace std;
 
 struct Email {
@@ -40,9 +41,9 @@ public:
 		Email* newEmail = new Email();
 
 		// Parse each field correctly
-		string idStr, isSpamStr;
-		getline(iss, idStr, ',');
-		newEmail->id = stoi(idStr);
+		string receiverDeletedStr, senderDeletedStr, isSpamStr;
+		getline(iss, receiverDeletedStr, ',');
+		getline(iss, senderDeletedStr, ',');
 		getline(iss, newEmail->subject, ',');
 		getline(iss, newEmail->sender, ',');
 		getline(iss, newEmail->receiver, ',');
@@ -50,7 +51,11 @@ public:
 		getline(iss, newEmail->time, ',');
 		getline(iss, newEmail->content, ',');
 		getline(iss, isSpamStr);
+
+		newEmail->receiverDeleted = (receiverDeletedStr == "1");
+		newEmail->senderDeleted = (senderDeletedStr == "1");
 		newEmail->isSpam = (isSpamStr == "1");
+		newEmail->next = nullptr;
 
 		// Only add emails that are for the current user
 		if (newEmail->sender == userEmail) {
@@ -69,44 +74,28 @@ public:
 	}
 
 	void dequeue(int index) {
-		if (empty()) {
-			cout << "The inbox is empty" << endl;
-			return;
-		}
-		else {
-			Email* current = front;
-			Email* prev = nullptr;
-			int currentIndex = 1;
+		Email* current = front;
+		Email* prev = nullptr;
+		int currentIndex = 1;
 
-			// Traverse the linked list to find the email at the specified index
-			while (current != nullptr) {
-				if (!current->isSpam) { // Only consider non-spam emails for the index
-					if (currentIndex == index) {
-						// Delete the selected email
-						if (prev == nullptr) {
-							front = current->next; // Remove the head email
-						}
-						else {
-							prev->next = current->next; // Remove the current email
-						}
-						if (current == rear) {	// If we deleted the last element, update rear
-							rear = prev;
-						}
-						delete current;
-						count--;
-						cout << "Email deleted successfully.\n";
-						return;
-					}
-					currentIndex++; // Increment the index only for non-spam emails
+		// Traverse the linked list to find the email at the specified index
+		while (current != nullptr) {
+			if (!current->isSpam) { // Only consider non-spam emails for the index
+				if (currentIndex == index) {
+					// Mark the email as deleted for the receiver
+					current->senderDeleted = true;
+					clearscreen();
+					cout << "\033[31mEmail deleted successfully.\033[0m\n";
+					return;
 				}
-				prev = current;
-				current = current->next;
+				currentIndex++; // Increment the index only for non-spam emails
 			}
-
-			// If the index is out of bounds or invalid
-			cout << "Invalid choice. No email was deleted.\n";
-			return;
+			current = current->next;
 		}
+
+		// If the index is out of bounds or invalid
+		cout << "Invalid choice. No email was deleted.\n";
+		return;
 	}
 
 	void clearQueue() {
@@ -123,7 +112,6 @@ public:
 
 	Email* getFront() {
 		if (empty()) {
-			cout << "The outbox is empty" << endl;
 			return 0;
 		}
 		else {
