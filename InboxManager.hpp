@@ -1,4 +1,3 @@
-// InboxManager.hpp
 #ifndef INBOX_MANAGER_H
 #define INBOX_MANAGER_H
 
@@ -7,11 +6,12 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <iomanip>  // For formatting the date and time
 #include "DataStruc.hpp"
 
 using namespace std;
 
-// Class to manage the inbox
+// Class to manage the inbox with a priority queue based on date and time
 class InboxManager {
 public:
     void displayInbox(const string& userEmail) {
@@ -37,7 +37,7 @@ public:
                         cout << "Email " << emailCount << ":\n";
                         cout << "Subject: " << current->subject << "\n";
                         cout << "Sender: " << current->sender << "\n";
-                        cout << "Date: " << current->date << " Time: " << current->time << "\n";
+                        cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
                         cout << "Content: " << current->content << "\n";
                     }
                 }
@@ -53,7 +53,7 @@ public:
             cin >> choice;
 
             if (choice == 'd' || choice == 'D') {
-                head = deleteEmail(head, userEmail);
+                head = dequeue(head);
             }
             else if (choice == 'm' || choice == 'M') {
                 inInboxMenu = false; // Exit the loop to return to the main menu
@@ -69,7 +69,23 @@ public:
     }
 
 private:
-    // Function to load emails into a linked list, filtering only those for the current user
+    // Function to format date from YYYYMMDD to YYYY-MM-DD
+    string formatDate(const string& date) {
+        if (date.length() != 8) {
+            return date; // Return as-is if not in expected format
+        }
+        return date.substr(0, 4) + "-" + date.substr(4, 2) + "-" + date.substr(6, 2);
+    }
+
+    // Function to format time from HHMMSS to HH:MM:SS
+    string formatTime(const string& time) {
+        if (time.length() != 6) {
+            return time; // Return as-is if not in expected format
+        }
+        return time.substr(0, 2) + ":" + time.substr(2, 2) + ":" + time.substr(4, 2);
+    }
+
+    // Function to load emails into a linked list, sorted by priority (latest date and time first)
     Email* loadEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
@@ -78,7 +94,6 @@ private:
         }
 
         Email* head = nullptr;
-        Email* tail = nullptr;
         string line;
         while (getline(emailFile, line)) {
             istringstream iss(line);
@@ -96,17 +111,11 @@ private:
             getline(iss, newEmail->content, ',');
             getline(iss, isSpamStr);
             newEmail->isSpam = (isSpamStr == "1");
+            newEmail->next = nullptr;
 
             // Only add emails that are for the current user
             if (newEmail->receiver == userEmail) {
-                if (head == nullptr) {
-                    head = newEmail;
-                    tail = newEmail;
-                }
-                else {
-                    tail->next = newEmail;
-                    tail = newEmail;
-                }
+                head = enqueue(head, newEmail);
             }
             else {
                 delete newEmail; // Discard emails that don't belong to the user
@@ -115,6 +124,90 @@ private:
 
         emailFile.close();
         return head;
+    }
+
+    // Function to enqueue (add) an email into the linked list by priority (latest date and time first)
+    Email* enqueue(Email* head, Email* newEmail) {
+        if (head == nullptr || compareDateTime(newEmail, head) > 0) {
+            // Insert at the head if list is empty or newEmail is more recent
+            newEmail->next = head;
+            head = newEmail;
+        }
+        else {
+            // Traverse to find the correct position for insertion
+            Email* current = head;
+            while (current->next != nullptr && compareDateTime(newEmail, current->next) <= 0) {
+                current = current->next;
+            }
+            newEmail->next = current->next;
+            current->next = newEmail;
+        }
+        return head;
+    }
+
+    // Function to dequeue (remove) an email
+    Email* dequeue(Email* head) {
+        if (head == nullptr) {
+            cout << "No emails available to delete.\n";
+            return head;
+        }
+
+        // Display the emails with index numbers to the user
+        cout << "\nEnter the number of the email you want to delete: ";
+        int index;
+        cin >> index;
+
+        Email* current = head;
+        Email* prev = nullptr;
+        int currentIndex = 1;
+
+        // Traverse the linked list to find the email at the specified index
+        while (current != nullptr) {
+            if (!current->isSpam) { // Only consider non-spam emails for the index
+                if (currentIndex == index) {
+                    // Dequeue (delete) the selected email
+                    if (prev == nullptr) {
+                        head = current->next; // Remove the head email
+                    }
+                    else {
+                        prev->next = current->next; // Remove the current email
+                    }
+                    delete current;
+                    cout << "Email deleted successfully.\n";
+                    return head; // Return the modified head
+                }
+                currentIndex++; // Increment the index only for non-spam emails
+            }
+            prev = current;
+            current = current->next;
+        }
+
+        // If the index is out of bounds or invalid
+        cout << "Invalid choice. No email was deleted.\n";
+        return head;
+    }
+
+    // Function to compare two emails by date and time
+    // Returns positive if email1 is more recent, negative if email2 is more recent, 0 if equal
+    int compareDateTime(Email* email1, Email* email2) {
+        if (email1->date > email2->date) {
+            return 1;
+        }
+        else if (email1->date < email2->date) {
+            return -1;
+        }
+        else {
+            // Dates are equal, compare times
+            if (email1->time > email2->time) {
+                return 1;
+            }
+            else if (email1->time < email2->time) {
+                return -1;
+            }
+            else {
+                return 0;
+            }
+        }
     }
 
     // Function to detect spam and mark emails as spam
@@ -150,49 +243,6 @@ private:
 
         spamFile.close();
     }
-
-    // Function to delete an email
-    Email* deleteEmail(Email* head, const string& userEmail) {
-        if (head == nullptr) {
-            cout << "No emails available to delete.\n";
-            return head;
-        }
-
-        // Display the emails with index numbers to the user
-        cout << "\nEnter the number of the email you want to delete: ";
-        int index;
-        cin >> index;
-
-        Email* current = head;
-        Email* prev = nullptr;
-        int currentIndex = 1;
-
-        // Traverse the linked list to find the email at the specified index
-        while (current != nullptr) {
-            if (!current->isSpam) { // Only consider non-spam emails for the index
-                if (currentIndex == index) {
-                    // Delete the selected email
-                    if (prev == nullptr) {
-                        head = current->next; // Remove the head email
-                    }
-                    else {
-                        prev->next = current->next; // Remove the current email
-                    }
-                    delete current;
-                    cout << "Email deleted successfully.\n";
-                    return head; // Return the modified head
-                }
-                currentIndex++; // Increment the index only for non-spam emails
-            }
-            prev = current;
-            current = current->next;
-        }
-
-        // If the index is out of bounds or invalid
-        cout << "Invalid choice. No email was deleted.\n";
-        return head;
-    }
-
 
     // Function to save emails back to the file
     void saveEmails(Email* head, const string& userEmail) {
@@ -248,7 +298,6 @@ private:
         remove("email.txt");
         rename("temp_email.txt", "email.txt");
     }
-
 
     // Function to free the linked list memory
     void freeEmailList(Email* head) {
