@@ -6,6 +6,8 @@
 using namespace std;
 
 struct Email {
+    bool receiverDeleted = false;
+    bool senderDeleted = false;
     string subject;
     string sender;
     string receiver;
