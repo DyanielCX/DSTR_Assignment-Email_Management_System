@@ -1,6 +1,6 @@
-// InboxManager.hpp
-#ifndef INBOX_MANAGER_HPP
-#define INBOX_MANAGER_HPP
+// OutboxManager.hpp
+#ifndef OUTBOX_MANAGER_HPP
+#define OUTBOX_MANAGER_HPP
 
 #include <iostream>
 #include <fstream>
@@ -12,26 +12,28 @@
 
 using namespace std;
 
-// Class to manage the inbox
-class InboxManager {
+Email_Queue emailQueue;
+
+// Class to manage the outbox
+class OutboxManager {
 public:
-    void displayInbox(const string& userEmail) {
-        bool inInboxMenu = true;
-        while (inInboxMenu) {
-            Email* head = loadEmails(userEmail);
-            Email* current = head;
+    void displayOutbox(const string& userEmail) {
+        bool inOutboxMenu = true;
+        while (inOutboxMenu) {
+            loadEmails(userEmail);
 
             // Check for spam status but do not delete spam emails
-            detectAndMarkSpam(head);
+            Email* front = emailQueue.getFront();
+            detectAndMarkSpam(front);
 
-            if (head == nullptr) {
+            if (emailQueue.empty()) {
                 cout << "No non-spam emails found for " << userEmail << ".\n";
                 break; // Exit the loop if there are no non-spam emails
             }
             else {
                 cout << "Inbox for " << userEmail << ":\n";
                 int emailCount = 0;
-                for (current = head; current != nullptr; current = current->next) {
+                for (Email* current = emailQueue.getFront(); current != nullptr; current = current->next) {
                     if (!current->isSpam) { // Only display non-spam emails for the current user
                         emailCount++;
                         cout << "---------------------------------------------\n";
@@ -54,18 +56,18 @@ public:
             cin >> choice;
 
             if (choice == 'd' || choice == 'D') {
-                head = deleteEmail(head, userEmail);
+                deleteEmail(userEmail);
             }
             else if (choice == 'm' || choice == 'M') {
-                inInboxMenu = false; // Exit the loop to return to the main menu
+                inOutboxMenu = false; // Exit the loop to return to the main menu
             }
             else {
                 cout << "Invalid choice. Please try again.\n";
             }
 
             // Save the updated emails (including spam status) and free the linked list memory
-            saveEmails(head, userEmail);
-            freeEmailList(head);
+            saveEmails(front, userEmail);
+            emailQueue.clearQueue();
 
             // Refresh screen
             clearscreen();
@@ -74,56 +76,26 @@ public:
 
 private:
     // Function to load emails into a linked list, filtering only those for the current user
-    Email* loadEmails(const string& userEmail) {
+    void loadEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt\n";
-            return nullptr;
+            return;
         }
 
-        Email* head = nullptr;
-        Email* tail = nullptr;
+        emailQueue.clearQueue();
+
         string line;
         while (getline(emailFile, line)) {
-            istringstream iss(line);
-            Email* newEmail = new Email();
-
-            // Parse each field correctly
-            string idStr, isSpamStr;
-            getline(iss, idStr, ',');
-            newEmail->id = stoi(idStr);
-            getline(iss, newEmail->subject, ',');
-            getline(iss, newEmail->sender, ',');
-            getline(iss, newEmail->receiver, ',');
-            getline(iss, newEmail->date, ',');
-            getline(iss, newEmail->time, ',');
-            getline(iss, newEmail->content, ',');
-            getline(iss, isSpamStr);
-            newEmail->isSpam = (isSpamStr == "1");
-
-            // Only add emails that are for the current user
-            if (newEmail->receiver == userEmail) {
-                if (head == nullptr) {
-                    head = newEmail;
-                    tail = newEmail;
-                }
-                else {
-                    tail->next = newEmail;
-                    tail = newEmail;
-                }
-            }
-            else {
-                delete newEmail; // Discard emails that don't belong to the user
-            }
+            emailQueue.enqueue(line, userEmail);
         }
 
         emailFile.close();
-        return head;
     }
 
     // Function to detect spam and mark emails as spam
-    void detectAndMarkSpam(Email* head) {
-        Email* current = head;
+    void detectAndMarkSpam(Email* front) {
+        Email* current = front;
         while (current != nullptr) {
             detectSpam(*current); // Mark the email as spam if necessary
             current = current->next;
@@ -156,10 +128,9 @@ private:
     }
 
     // Function to delete an email
-    Email* deleteEmail(Email* head, const string& userEmail) {
-        if (head == nullptr) {
+    void deleteEmail(const string& userEmail) {
+        if (emailQueue.empty()) {
             cout << "No emails available to delete.\n";
-            return head;
         }
 
         // Display the emails with index numbers to the user
@@ -167,39 +138,13 @@ private:
         int index;
         cin >> index;
 
-        Email* current = head;
-        Email* prev = nullptr;
-        int currentIndex = 1;
-
-        // Traverse the linked list to find the email at the specified index
-        while (current != nullptr) {
-            if (!current->isSpam) { // Only consider non-spam emails for the index
-                if (currentIndex == index) {
-                    // Delete the selected email
-                    if (prev == nullptr) {
-                        head = current->next; // Remove the head email
-                    }
-                    else {
-                        prev->next = current->next; // Remove the current email
-                    }
-                    delete current;
-                    cout << "Email deleted successfully.\n";
-                    return head; // Return the modified head
-                }
-                currentIndex++; // Increment the index only for non-spam emails
-            }
-            prev = current;
-            current = current->next;
-        }
-
-        // If the index is out of bounds or invalid
-        cout << "Invalid choice. No email was deleted.\n";
-        return head;
+        // Dequeue the selected email
+        emailQueue.dequeue(index);
     }
 
 
     // Function to save emails back to the file
-    void saveEmails(Email* head, const string& userEmail) {
+    void saveEmails(Email* front, const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt for reading.\n";
@@ -214,7 +159,7 @@ private:
         }
 
         string line;
-        Email* current = head;
+        Email* current = front;
         while (getline(emailFile, line)) {
             istringstream iss(line);
             Email email;
@@ -229,14 +174,15 @@ private:
             getline(iss, email.content, ',');
             getline(iss, isSpamStr);
 
+
             // Check if this email belongs to the current user and if it needs to be saved
-            if (email.receiver == userEmail) {
+            if (email.sender == userEmail) {
                 // Only save the email if it is still in the linked list
                 if (current != nullptr && current->id == email.id) {
                     outFile << current->id << "," << current->subject << "," << current->sender << ","
                         << current->receiver << "," << current->date << "," << current->time << ","
                         << current->content << "," << (current->isSpam ? "1" : "0") << "\n";
-                    current = current->next; // Move to the next email in the linked list
+                    current = current->next; // Move to the next email in the queue
                 }
             }
             else {
@@ -252,16 +198,6 @@ private:
         remove("email.txt");
         rename("temp_email.txt", "email.txt");
     }
-
-
-    // Function to free the linked list memory
-    void freeEmailList(Email* head) {
-        while (head != nullptr) {
-            Email* temp = head;
-            head = head->next;
-            delete temp;
-        }
-    }
 };
 
-#endif // INBOX_MANAGER_H
+#endif // OUTBOX_MANAGER_HPP

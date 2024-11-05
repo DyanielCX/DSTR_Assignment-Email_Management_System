@@ -1,5 +1,6 @@
 #include "EditProfile.hpp"
 #include "InboxManager.hpp"
+#include "OutboxManager.hpp"
 #include "SpamManager.hpp"
 #include "Utils.hpp"
 #include <iostream>
@@ -14,6 +15,7 @@ void displayMainMenu(const string& userEmail) {
     bool isRunning = true;
     ProfileEditor profileEditor;
     InboxManager inboxManager;
+    OutboxManager outboxManager;
     SpamManager spamManager;
 
     while (isRunning) {
@@ -63,6 +65,7 @@ void displayMainMenu(const string& userEmail) {
             break;
         case 2:
             cout << "Outbox Management selected.\n";
+            outboxManager.displayOutbox(userEmail);
             break;
         case 3:
             cout << "Search and Retrieval selected.\n";

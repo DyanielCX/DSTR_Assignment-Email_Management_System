@@ -1,6 +1,6 @@
-// Utils.h
-#ifndef UTILS_H
-#define UTILS_H
+// Utils.hpp
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <cstdlib>
 
@@ -12,4 +12,4 @@ inline void clearscreen() {
 #endif
 }
 
-#endif // UTILS_H
+#endif // UTILS_HPP
