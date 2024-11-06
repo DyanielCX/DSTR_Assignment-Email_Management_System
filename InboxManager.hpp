@@ -286,19 +286,35 @@ private:
             getline(iss, content, ',');
             getline(iss, isSpamStr);
 
+            bool originalReceiverDeleted = (receiverDeletedStr == "1");
+            bool originalSenderDeleted = (senderDeletedStr == "1");
+
             // Check if this email belongs to the current user and needs updating
             if (receiver == userEmail) {
                 // Update the `receiverDeleted` flag if the email is found in the linked list
                 if (current != nullptr && current->subject == subject && current->sender == sender &&
                     current->receiver == receiver && current->date == date && current->time == time &&
                     current->content == content) {
-                    outFile << (current->receiverDeleted ? "1" : "0") << ","
-                        << senderDeletedStr << "," << subject << "," << sender << ","
-                        << receiver << "," << date << "," << time << ","
-                        << content << "," << isSpamStr << "\n";
+
+                    bool updatedReceiverDeleted = current->receiverDeleted;
+                    bool updatedSenderDeleted = current->senderDeleted;
+
+                    // If both receiverDeleted and senderDeleted are 1, skip this line to delete the email
+                    if (updatedReceiverDeleted && updatedSenderDeleted) {
+                        current = current->next;
+                        continue; // Skip writing this email, effectively deleting it
+                    }
+
+                    // Otherwise, write the updated email information
+                    outFile << (updatedReceiverDeleted ? "1" : "0") << ","
+                        << (updatedSenderDeleted ? "1" : "0") << ","
+                        << subject << "," << sender << "," << receiver << ","
+                        << date << "," << time << "," << content << "," << isSpamStr << "\n";
+
                     current = current->next;
                 }
                 else {
+                    // If email not found in linked list, write it unchanged
                     outFile << receiverDeletedStr << "," << senderDeletedStr << ","
                         << subject << "," << sender << "," << receiver << ","
                         << date << "," << time << "," << content << "," << isSpamStr << "\n";
