@@ -5,7 +5,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <algorithm>
 #include "DataStruc.hpp"
 
 using namespace std;
@@ -13,15 +12,26 @@ using namespace std;
 // Class to manage spam emails
 class SpamManager {
 public:
-    void displaySpamEmails() {
+    void displaySpamEmails(const string& userEmail) {
         bool inSpamMenu = true;
 
         while (inSpamMenu) {
             // Load spam emails
-            Email* head = loadSpamEmails();
+            Email* head = loadSpamEmails(userEmail);
             if (head == nullptr) {
                 cout << "No spam emails found.\n";
-                return;
+                char choice;
+                do {
+                    cout << "Enter 'm' to go back to the main menu: ";
+                    cin >> choice;
+                    if (choice == 'm' || choice == 'M') {
+                        inSpamMenu = false; // Exit the loop to return to the main menu
+                    }
+                    else {
+                        cout << "Invalid choice. Please try again.\n";
+                    }
+                } while (inSpamMenu); // Only exit if user enters 'm'
+                return; // Exit the function after handling no spam emails
             }
 
             // Display spam emails
@@ -50,7 +60,8 @@ public:
             cin >> choice;
 
             if (choice == 'd' || choice == 'D') {
-                head = deleteSpamEmail(head);
+                // Capture the details of the email to be deleted
+                deleteSelectedSpamEmail(head, userEmail);
             }
             else if (choice == 'm' || choice == 'M') {
                 inSpamMenu = false; // Exit the loop to return to the main menu
@@ -59,19 +70,14 @@ public:
                 cout << "Invalid choice. Please try again.\n";
             }
 
-            // Save the updated spam emails to the file if a deletion occurred
-            if (choice == 'd' || choice == 'D') {
-                saveEmailsAfterSpamUpdate(head);
-            }
-
-            // Free the linked list memory
+            // Free the linked list memory before the next loop iteration
             freeEmailList(head);
         }
     }
 
 private:
-    // Function to load spam emails into a linked list
-    Email* loadSpamEmails() {
+    // Function to load spam emails into a linked list for a specific user
+    Email* loadSpamEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt\n";
@@ -86,7 +92,9 @@ private:
             Email* newEmail = new Email();
 
             // Parse each field correctly
-            string idStr, isSpamStr;
+            string receiverDeletedStr, senderDeletedStr, isSpamStr;
+            getline(iss, receiverDeletedStr, ',');
+            getline(iss, senderDeletedStr, ',');
             getline(iss, newEmail->subject, ',');
             getline(iss, newEmail->sender, ',');
             getline(iss, newEmail->receiver, ',');
@@ -94,10 +102,14 @@ private:
             getline(iss, newEmail->time, ',');
             getline(iss, newEmail->content, ',');
             getline(iss, isSpamStr);
-            newEmail->isSpam = (isSpamStr == "1");
 
-            // Add email to the linked list if it is marked as spam
-            if (newEmail->isSpam) {
+            newEmail->receiverDeleted = (receiverDeletedStr == "1");
+            newEmail->senderDeleted = (senderDeletedStr == "1");
+            newEmail->isSpam = (isSpamStr == "1");
+            newEmail->next = nullptr;
+
+            // Add email to the linked list if it is marked as spam and belongs to the specified user
+            if (newEmail->isSpam && newEmail->receiver == userEmail && !newEmail->receiverDeleted) {
                 if (head == nullptr) {
                     head = newEmail;
                     tail = newEmail;
@@ -108,7 +120,7 @@ private:
                 }
             }
             else {
-                delete newEmail; // Discard emails that are not spam
+                delete newEmail; // Discard emails that don't meet the criteria
             }
         }
 
@@ -116,11 +128,11 @@ private:
         return head;
     }
 
-    // Function to delete a spam email
-    Email* deleteSpamEmail(Email* head) {
+    // Function to delete a spam email based on user input and save changes to the file
+    void deleteSelectedSpamEmail(Email* head, const string& userEmail) {
         if (head == nullptr) {
             cout << "No spam emails available to delete.\n";
-            return head;
+            return;
         }
 
         // Display the emails with index numbers
@@ -129,35 +141,29 @@ private:
         cin >> index;
 
         Email* current = head;
-        Email* prev = nullptr;
         int currentIndex = 1;
 
         // Traverse the linked list to find the email at the specified index
         while (current != nullptr) {
             if (currentIndex == index) {
-                // Delete the selected email
-                if (prev == nullptr) {
-                    head = current->next; // Remove the head email
-                }
-                else {
-                    prev->next = current->next; // Remove the current email
-                }
-                delete current;
+                // Store the email details for comparison
+                Email emailToDelete = *current;
                 cout << "Spam email deleted successfully.\n";
-                return head; // Return the modified head
+
+                // Now save the emails back to the file, omitting the selected email
+                saveEmailsAfterDeletion(emailToDelete);
+                return; // Exit after deletion
             }
             currentIndex++;
-            prev = current;
             current = current->next;
         }
 
         // If the index is out of bounds or invalid
         cout << "Invalid choice. No spam email was deleted.\n";
-        return head;
     }
 
     // Function to save updated emails back to the file after a spam email is deleted
-    void saveEmailsAfterSpamUpdate(Email* head) {
+    void saveEmailsAfterDeletion(const Email& emailToDelete) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt for reading.\n";
@@ -174,25 +180,41 @@ private:
         string line;
         while (getline(emailFile, line)) {
             istringstream iss(line);
-            Email email;
-            string idStr, isSpamStr;
-            getline(iss, email.subject, ',');
-            getline(iss, email.sender, ',');
-            getline(iss, email.receiver, ',');
-            getline(iss, email.date, ',');
-            getline(iss, email.time, ',');
-            getline(iss, email.content, ',');
+            Email fileEmail;
+            string receiverDeletedStr, senderDeletedStr, isSpamStr;
+            getline(iss, receiverDeletedStr, ',');
+            getline(iss, senderDeletedStr, ',');
+            getline(iss, fileEmail.subject, ',');
+            getline(iss, fileEmail.sender, ',');
+            getline(iss, fileEmail.receiver, ',');
+            getline(iss, fileEmail.date, ',');
+            getline(iss, fileEmail.time, ',');
+            getline(iss, fileEmail.content, ',');
             getline(iss, isSpamStr);
-            email.isSpam = (isSpamStr == "1");
 
-            // Write the email to the output file if:
-            // - The email is not a spam (leave it as it is)
-            // - The email is in the linked list (which means it was not deleted)
-            if (!email.isSpam) {
-                outFile << email.subject << "," << email.sender << ","
-                    << email.receiver << "," << email.date << "," << email.time << ","
-                    << email.content << "," << (email.isSpam ? "1" : "0") << "\n";
+            fileEmail.isSpam = (isSpamStr == "1");
+
+            // Check if this is the email to delete
+            if (fileEmail.subject == emailToDelete.subject &&
+                fileEmail.sender == emailToDelete.sender &&
+                fileEmail.receiver == emailToDelete.receiver &&
+                fileEmail.date == emailToDelete.date &&
+                fileEmail.time == emailToDelete.time &&
+                fileEmail.content == emailToDelete.content) {
+                // Skip writing this email to effectively delete it
+                continue;
             }
+
+            // Otherwise, write the email to the output file
+            outFile << receiverDeletedStr << ","
+                << senderDeletedStr << ","
+                << fileEmail.subject << ","
+                << fileEmail.sender << ","
+                << fileEmail.receiver << ","
+                << fileEmail.date << ","
+                << fileEmail.time << ","
+                << fileEmail.content << ","
+                << isSpamStr << "\n";
         }
 
         emailFile.close();

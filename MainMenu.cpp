@@ -79,7 +79,7 @@ void displayMainMenu(const string& userEmail) {
             break;
         case 5:
             cout << "Spam Messages selected.\n";
-            spamManager.displaySpamEmails();
+            spamManager.displaySpamEmails(userEmail);
             break;
         case 6:
             profileEditor.editProfileMenu(userEmail); // Open Edit Profile menu
