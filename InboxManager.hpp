@@ -61,18 +61,20 @@ public:
                 cout << "---------------------------------------------\n";
             }
 
-
-
             // Offer options to the user
             char choice;
             cout << "\nOptions:\n";
-            cout << "d - Delete an email \n";
+            cout << "d - Delete an email\n";
+            cout << "s - Mark an email as spam\n";
             cout << "m - Return to the main menu\n";
             cout << "Enter your choice: ";
             cin >> choice;
 
             if (choice == 'd' || choice == 'D') {
                 markEmailAsDeleted(head);
+            }
+            else if (choice == 's' || choice == 'S') {
+                markEmailAsSpam(head);
             }
             else if (choice == 'm' || choice == 'M') {
                 inInboxMenu = false; // Exit the loop to return to the main menu
@@ -224,6 +226,38 @@ private:
         }
     }
 
+    void markEmailAsSpam(Email* head) {
+        if (head == nullptr) {
+            cout << "No emails available to mark as spam.\n";
+            return;
+        }
+
+        // Display the emails with index numbers to the user
+        cout << "\nEnter the number of the email you want to mark as spam: ";
+        int index;
+        cin >> index;
+
+        Email* current = head;
+        int currentIndex = 1;
+
+        // Traverse the linked list to find the email at the specified index
+        while (current != nullptr) {
+            if (!current->isSpam) { // Only consider non-spam emails for marking as spam
+                if (currentIndex == index) {
+                    // Mark the email as spam
+                    current->isSpam = true;
+                    cout << "Email marked as spam successfully.\n";
+                    return;
+                }
+                currentIndex++; // Increment the index only for non-spam emails
+            }
+            current = current->next;
+        }
+
+        // If the index is out of bounds or invalid
+        cout << "Invalid choice. No email was marked as spam.\n";
+    }
+
     // Function to detect spam and mark emails as spam
     void detectAndMarkSpam(Email* head) {
         Email* current = head;
@@ -291,13 +325,14 @@ private:
 
             // Check if this email belongs to the current user and needs updating
             if (receiver == userEmail) {
-                // Update the `receiverDeleted` flag if the email is found in the linked list
+                // Update the `receiverDeleted` and `isSpam` flags if the email is found in the linked list
                 if (current != nullptr && current->subject == subject && current->sender == sender &&
                     current->receiver == receiver && current->date == date && current->time == time &&
                     current->content == content) {
 
                     bool updatedReceiverDeleted = current->receiverDeleted;
                     bool updatedSenderDeleted = current->senderDeleted;
+                    bool updatedIsSpam = current->isSpam;
 
                     // If both receiverDeleted and senderDeleted are 1, skip this line to delete the email
                     if (updatedReceiverDeleted && updatedSenderDeleted) {
@@ -309,7 +344,8 @@ private:
                     outFile << (updatedReceiverDeleted ? "1" : "0") << ","
                         << (updatedSenderDeleted ? "1" : "0") << ","
                         << subject << "," << sender << "," << receiver << ","
-                        << date << "," << time << "," << content << "," << isSpamStr << "\n";
+                        << date << "," << time << "," << content << ","
+                        << (updatedIsSpam ? "1" : "0") << "\n"; // Updated isSpam flag
 
                     current = current->next;
                 }
