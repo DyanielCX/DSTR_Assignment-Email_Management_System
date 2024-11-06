@@ -131,9 +131,9 @@ private:
 
     // Function to detect spam
     void detectSpam(Email& email) {
-        ifstream spamFile("spam.txt");
+        ifstream spamFile("spamword.txt");
         if (!spamFile.is_open()) {
-            cerr << "Failed to open spam.txt\n";
+            cerr << "Failed to open spamword.txt\n";
             return;
         }
 

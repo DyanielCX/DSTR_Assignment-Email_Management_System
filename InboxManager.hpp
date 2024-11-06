@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <set>
 #include <algorithm>
 #include "Utils.hpp"
 #include "DataStruc.hpp"
@@ -17,18 +18,24 @@ class InboxManager {
 public:
     void displayInbox(const string& userEmail) {
         bool inInboxMenu = true;
+
+        // Load spam users from spamuser.txt into a set
+        set<string> spamUsers = loadSpamUsers();
+
         while (inInboxMenu) {
             Email* head = loadEmails(userEmail);
             Email* current = head;
-
-            // Check for spam status but do not delete spam emails
-            detectAndMarkSpam(head);
 
             // Check if there are any non-spam emails
             bool hasNonSpamEmail = false;
             int emailCount = 0;
 
             for (Email* current = head; current != nullptr; current = current->next) {
+                // Skip emails from senders in the spam user list
+                if (spamUsers.find(current->sender) != spamUsers.end()) {
+                    continue;
+                }
+
                 if (!current->isSpam) {
                     hasNonSpamEmail = true;
                     emailCount++;
@@ -41,7 +48,7 @@ public:
                 }
             }
 
-            // If no non-spam emails were found, or if the list is empty, inform the user
+            // If no non-spam emails were found, inform the user
             if (!hasNonSpamEmail) {
                 cout << "No emails found for " << userEmail << ".\n";
                 char choice;
@@ -49,8 +56,8 @@ public:
                     cout << "Enter 'm' to go back to the main menu: ";
                     cin >> choice;
                     if (choice == 'm' || choice == 'M') {
-                        inInboxMenu = false; // Set the flag to false to exit the loop
-                        return; // Return to ensure the function exits and does not continue
+                        inInboxMenu = false;
+                        return;
                     }
                     else {
                         cout << "Invalid choice. Please try again.\n";
@@ -74,16 +81,16 @@ public:
                 markEmailAsDeleted(head);
             }
             else if (choice == 's' || choice == 'S') {
-                markEmailAsSpam(head);
+                markEmailAsSpam(head, spamUsers);
             }
             else if (choice == 'm' || choice == 'M') {
-                inInboxMenu = false; // Exit the loop to return to the main menu
+                inInboxMenu = false;
             }
             else {
                 cout << "Invalid choice. Please try again.\n";
             }
 
-            // Save the updated emails (including spam status and deleted flags) and free the linked list memory
+            // Save the updated emails and free the linked list memory
             saveEmails(head, userEmail);
             freeEmailList(head);
 
@@ -93,6 +100,69 @@ public:
     }
 
 private:
+    // Load spam users from spamuser.txt into a set
+    set<string> loadSpamUsers() {
+        set<string> spamUsers;
+        ifstream spamUserFile("spamuser.txt");
+        string email;
+
+        while (getline(spamUserFile, email)) {
+            spamUsers.insert(email);
+        }
+
+        spamUserFile.close();
+        return spamUsers;
+    }
+
+    // Function to mark an email as spam
+    void markEmailAsSpam(Email* head, set<string>& spamUsers) {
+        if (head == nullptr) {
+            cout << "No emails available to mark as spam.\n";
+            return;
+        }
+
+        // Display the emails with index numbers to the user
+        cout << "\nEnter the number of the email you want to mark as spam: ";
+        int index;
+        cin >> index;
+
+        Email* current = head;
+        int currentIndex = 1;
+
+        // Traverse the linked list to find the email at the specified index
+        while (current != nullptr) {
+            if (!current->isSpam) { // Only consider non-spam emails for marking as spam
+                if (currentIndex == index) {
+                    // Mark the email as spam
+                    current->isSpam = true;
+                    cout << "Email marked as spam successfully.\n";
+
+                    // Add sender to spamuser.txt if not already there
+                    if (spamUsers.find(current->sender) == spamUsers.end()) {
+                        addSenderToSpamUserFile(current->sender);
+                        spamUsers.insert(current->sender); // Update the in-memory set
+                    }
+                    return;
+                }
+                currentIndex++;
+            }
+            current = current->next;
+        }
+
+        // If the index is out of bounds or invalid
+        cout << "Invalid choice. No email was marked as spam.\n";
+    }
+
+    // Helper function to add sender to spamuser.txt
+    void addSenderToSpamUserFile(const string& senderEmail) {
+        ofstream spamUserFile("spamuser.txt", ios::app); // Open in append mode
+        if (spamUserFile.is_open()) {
+            spamUserFile << senderEmail << "\n";
+            spamUserFile.close();
+        } else {
+            cerr << "Failed to open spamuser.txt\n";
+        }
+    }
     // Function to format date from YYYYMMDD to YYYY-MM-DD
     string formatDate(const string& date) {
         if (date.length() != 8) {
@@ -268,9 +338,9 @@ private:
     }
 
     void detectSpam(Email& email) {
-        ifstream spamFile("spam.txt");
+        ifstream spamFile("spamword.txt");
         if (!spamFile.is_open()) {
-            cerr << "Failed to open spam.txt\n";
+            cerr << "Failed to open spamword.txt\n";
             return;
         }
 

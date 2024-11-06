@@ -132,7 +132,8 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="email.txt" />
-    <Text Include="spam.txt" />
+    <Text Include="spamword.txt" />
+    <Text Include="spamuser.txt" />
     <Text Include="user.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -55,6 +55,7 @@ public:
             char choice;
             cout << "\nOptions:\n";
             cout << "d - Delete a spam email\n";
+            cout << "n - Mark a spam email as non-spam\n";
             cout << "m - Return to the main menu\n";
             cout << "Enter your choice: ";
             cin >> choice;
@@ -62,6 +63,10 @@ public:
             if (choice == 'd' || choice == 'D') {
                 // Capture the details of the email to be deleted
                 deleteSelectedSpamEmail(head, userEmail);
+            }
+            else if (choice == 'n' || choice == 'N') {
+                // Mark a spam email as non-spam
+                markSpamAsNonSpam(head, userEmail);
             }
             else if (choice == 'm' || choice == 'M') {
                 inSpamMenu = false; // Exit the loop to return to the main menu
@@ -162,7 +167,112 @@ private:
         cout << "Invalid choice. No spam email was deleted.\n";
     }
 
-    // Function to save updated emails back to the file after a spam email is deleted
+    // Function to mark a spam email as non-spam based on user input and save changes to the file
+    void markSpamAsNonSpam(Email* head, const string& userEmail) {
+        if (head == nullptr) {
+            cout << "No spam emails available to mark as non-spam.\n";
+            return;
+        }
+
+        // Display the emails with index numbers
+        cout << "\nEnter the number of the spam email you want to mark as non-spam: ";
+        int index;
+        cin >> index;
+
+        Email* current = head;
+        int currentIndex = 1;
+
+        // Traverse the linked list to find the email at the specified index
+        while (current != nullptr) {
+            if (currentIndex == index) {
+                // Store the email details for comparison
+                Email emailToModify = *current;
+                cout << "Spam email marked as non-spam successfully.\n";
+
+                // Now save the emails back to the file, changing the `isSpam` status to non-spam
+                saveEmailsAfterMarkingNonSpam(emailToModify);
+                return; // Exit after marking
+            }
+            currentIndex++;
+            current = current->next;
+        }
+
+        // If the index is out of bounds or invalid
+        cout << "Invalid choice. No spam email was marked as non-spam.\n";
+    }
+
+    // Function to save updated emails back to the file after marking an email as non-spam
+    void saveEmailsAfterMarkingNonSpam(const Email& emailToModify) {
+        ifstream emailFile("email.txt");
+        if (!emailFile.is_open()) {
+            cerr << "Failed to open email.txt for reading.\n";
+            return;
+        }
+
+        ofstream outFile("temp_email.txt"); // Use a temporary file for writing
+        if (!outFile.is_open()) {
+            cerr << "Failed to open temp_email.txt for writing.\n";
+            emailFile.close();
+            return;
+        }
+
+        string line;
+        while (getline(emailFile, line)) {
+            istringstream iss(line);
+            Email fileEmail;
+            string receiverDeletedStr, senderDeletedStr, isSpamStr;
+            getline(iss, receiverDeletedStr, ',');
+            getline(iss, senderDeletedStr, ',');
+            getline(iss, fileEmail.subject, ',');
+            getline(iss, fileEmail.sender, ',');
+            getline(iss, fileEmail.receiver, ',');
+            getline(iss, fileEmail.date, ',');
+            getline(iss, fileEmail.time, ',');
+            getline(iss, fileEmail.content, ',');
+            getline(iss, isSpamStr);
+
+            fileEmail.isSpam = (isSpamStr == "1");
+
+            // Check if this is the email to modify
+            if (fileEmail.subject == emailToModify.subject &&
+                fileEmail.sender == emailToModify.sender &&
+                fileEmail.receiver == emailToModify.receiver &&
+                fileEmail.date == emailToModify.date &&
+                fileEmail.time == emailToModify.time &&
+                fileEmail.content == emailToModify.content) {
+                // Mark this email as non-spam by setting isSpam to 0
+                outFile << receiverDeletedStr << ","
+                    << senderDeletedStr << ","
+                    << fileEmail.subject << ","
+                    << fileEmail.sender << ","
+                    << fileEmail.receiver << ","
+                    << fileEmail.date << ","
+                    << fileEmail.time << ","
+                    << fileEmail.content << ",0\n"; // Set isSpam to 0
+            }
+            else {
+                // Otherwise, write the email as it is
+                outFile << receiverDeletedStr << ","
+                    << senderDeletedStr << ","
+                    << fileEmail.subject << ","
+                    << fileEmail.sender << ","
+                    << fileEmail.receiver << ","
+                    << fileEmail.date << ","
+                    << fileEmail.time << ","
+                    << fileEmail.content << ","
+                    << isSpamStr << "\n";
+            }
+        }
+
+        emailFile.close();
+        outFile.close();
+
+        // Replace the original file with the updated file
+        remove("email.txt");
+        rename("temp_email.txt", "email.txt");
+    }
+
+    // Function to save updated emails back to the file after deleting a spam email
     void saveEmailsAfterDeletion(const Email& emailToDelete) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
@@ -224,6 +334,7 @@ private:
         remove("email.txt");
         rename("temp_email.txt", "email.txt");
     }
+
 
     // Function to free the linked list memory
     void freeEmailList(Email* head) {
