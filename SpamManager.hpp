@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <stack>
+#include "Utils.hpp"
 #include "DataStruc.hpp"
 
 using namespace std;
@@ -16,9 +18,9 @@ public:
         bool inSpamMenu = true;
 
         while (inSpamMenu) {
-            // Load spam emails
-            Email* head = loadSpamEmails(userEmail);
-            if (head == nullptr) {
+            // Load spam emails into a stack with oldest emails at the bottom
+            stack<Email*> spamStack = loadSpamEmailsToStack(userEmail);
+            if (spamStack.empty()) {
                 cout << "No spam emails found.\n";
                 char choice;
                 do {
@@ -35,19 +37,19 @@ public:
             }
 
             // Display spam emails
-            Email* current = head;
-            int emailCount = 0;
+            stack<Email*> tempStack = spamStack; // Copy main stack for display
+            int emailCount = tempStack.size();
             cout << "Spam Emails:\n";
-            while (current != nullptr) {
-                emailCount++;
+            while (!tempStack.empty()) {
+                Email* current = tempStack.top();
+                tempStack.pop();
                 cout << "---------------------------------------------\n";
-                cout << "Email " << emailCount << ":\n";
+                cout << "Email " << emailCount-- << ":\n";
                 cout << "Subject: " << current->subject << "\n";
                 cout << "Sender: " << current->sender << "\n";
                 cout << "Receiver: " << current->receiver << "\n";
                 cout << "Date: " << current->date << " Time: " << current->time << "\n";
                 cout << "Content: " << current->content << "\n";
-                current = current->next;
             }
             cout << "---------------------------------------------\n";
 
@@ -61,12 +63,10 @@ public:
             cin >> choice;
 
             if (choice == 'd' || choice == 'D') {
-                // Capture the details of the email to be deleted
-                deleteSelectedSpamEmail(head, userEmail);
+                deleteSelectedSpamEmail(spamStack, userEmail);
             }
             else if (choice == 'n' || choice == 'N') {
-                // Mark a spam email as non-spam
-                markSpamAsNonSpam(head, userEmail);
+                markSpamAsNonSpam(spamStack, userEmail);
             }
             else if (choice == 'm' || choice == 'M') {
                 inSpamMenu = false; // Exit the loop to return to the main menu
@@ -75,23 +75,25 @@ public:
                 cout << "Invalid choice. Please try again.\n";
             }
 
-            // Free the linked list memory before the next loop iteration
-            freeEmailList(head);
+            // Save the updated stack back to email.txt
+            saveEmails(spamStack, userEmail);
+
+            // Clear screen to display updated inbox
+            clearscreen();
         }
     }
 
 private:
-    // Function to load spam emails into a linked list for a specific user
-    Email* loadSpamEmails(const string& userEmail) {
+    stack<Email*> loadSpamEmailsToStack(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt\n";
-            return nullptr;
+            return stack<Email*>();
         }
 
-        Email* head = nullptr;
-        Email* tail = nullptr;
+        Email* sortedListHead = nullptr;
         string line;
+
         while (getline(emailFile, line)) {
             istringstream iss(line);
             Email* newEmail = new Email();
@@ -113,96 +115,120 @@ private:
             newEmail->isSpam = (isSpamStr == "1");
             newEmail->next = nullptr;
 
-            // Add email to the linked list if it is marked as spam and belongs to the specified user
+            // Add email to sorted list if it meets the criteria
             if (newEmail->isSpam && newEmail->receiver == userEmail && !newEmail->receiverDeleted) {
-                if (head == nullptr) {
-                    head = newEmail;
-                    tail = newEmail;
-                }
-                else {
-                    tail->next = newEmail;
-                    tail = newEmail;
-                }
+                sortedListHead = insertInOrder(sortedListHead, newEmail);
             }
             else {
-                delete newEmail; // Discard emails that don't meet the criteria
+                delete newEmail;
             }
         }
 
         emailFile.close();
+
+        // Push sorted emails into a temporary stack to reverse the order
+        stack<Email*> tempStack;
+        Email* current = sortedListHead;
+        while (current != nullptr) {
+            tempStack.push(current);
+            current = current->next;
+        }
+
+        // Now push emails from the temporary stack into the final stack
+        stack<Email*> emailStack;
+        while (!tempStack.empty()) {
+            emailStack.push(tempStack.top());
+            tempStack.pop();
+        }
+
+        return emailStack;
+    }
+
+
+    // Insert emails into a linked list in sorted order by date and time
+    Email* insertInOrder(Email* head, Email* newEmail) {
+        if (!head || compareDateTime(newEmail, head) < 0) {
+            newEmail->next = head;
+            return newEmail;
+        }
+
+        Email* current = head;
+        while (current->next && compareDateTime(newEmail, current->next) >= 0) {
+            current = current->next;
+        }
+        newEmail->next = current->next;
+        current->next = newEmail;
         return head;
     }
 
-    // Function to delete a spam email based on user input and save changes to the file
-    void deleteSelectedSpamEmail(Email* head, const string& userEmail) {
-        if (head == nullptr) {
-            cout << "No spam emails available to delete.\n";
-            return;
-        }
-
-        // Display the emails with index numbers
-        cout << "\nEnter the number of the spam email you want to delete: ";
-        int index;
-        cin >> index;
-
-        Email* current = head;
-        int currentIndex = 1;
-
-        // Traverse the linked list to find the email at the specified index
-        while (current != nullptr) {
-            if (currentIndex == index) {
-                // Store the email details for comparison
-                Email emailToDelete = *current;
-                cout << "Spam email deleted successfully.\n";
-
-                // Now save the emails back to the file, omitting the selected email
-                saveEmailsAfterDeletion(emailToDelete);
-                return; // Exit after deletion
-            }
-            currentIndex++;
-            current = current->next;
-        }
-
-        // If the index is out of bounds or invalid
-        cout << "Invalid choice. No spam email was deleted.\n";
+    int compareDateTime(Email* email1, Email* email2) {
+        if (email1->date != email2->date) return email1->date < email2->date ? -1 : 1;
+        return email1->time < email2->time ? -1 : 1;
     }
 
-    // Function to mark a spam email as non-spam based on user input and save changes to the file
-    void markSpamAsNonSpam(Email* head, const string& userEmail) {
-        if (head == nullptr) {
-            cout << "No spam emails available to mark as non-spam.\n";
-            return;
+    template <typename Func>
+    void modifyEmailInStack(stack<Email*>& emailStack, Func modifyFunc) {
+        // Step 1: Transfer emails from stack to a temporary linked list in display order
+        Email* emailListHead = nullptr;
+
+        while (!emailStack.empty()) {
+            Email* currentEmail = emailStack.top();
+            emailStack.pop();
+
+            // Insert each email at the head of the linked list (to maintain display order)
+            currentEmail->next = emailListHead;
+            emailListHead = currentEmail;
         }
 
-        // Display the emails with index numbers
-        cout << "\nEnter the number of the spam email you want to mark as non-spam: ";
+        // Step 2: Traverse the linked list to find the selected email
         int index;
+        cout << "\nEnter the number of the spam email you want to modify: ";
         cin >> index;
 
-        Email* current = head;
         int currentIndex = 1;
+        bool modified = false;
+        Email* current = emailListHead;
 
-        // Traverse the linked list to find the email at the specified index
         while (current != nullptr) {
             if (currentIndex == index) {
-                // Store the email details for comparison
-                Email emailToModify = *current;
-                cout << "Spam email marked as non-spam successfully.\n";
-
-                // Now save the emails back to the file, changing the `isSpam` status to non-spam
-                saveEmailsAfterMarkingNonSpam(emailToModify);
-                return; // Exit after marking
+                // Apply modification function to the selected email
+                modifyFunc(current);
+                cout << "Spam email " << index << " modified successfully.\n";
+                modified = true;
+                break;
             }
-            currentIndex++;
             current = current->next;
+            currentIndex++;
         }
 
-        // If the index is out of bounds or invalid
-        cout << "Invalid choice. No spam email was marked as non-spam.\n";
+        if (!modified) {
+            cout << "Invalid choice. No spam email was modified.\n";
+        }
+
+        // Step 3: Rebuild the stack in the original order from the linked list
+        current = emailListHead;
+        while (current != nullptr) {
+            emailStack.push(current);
+            current = current->next;
+        }
     }
 
-    // Function to save updated emails back to the file after marking an email as non-spam
-    void saveEmailsAfterMarkingNonSpam(const Email& emailToModify) {
+
+    void deleteSelectedSpamEmail(stack<Email*>& spamStack, const string& userEmail) {
+        modifyEmailInStack(spamStack, [](Email* email) {
+            email->receiverDeleted = true;
+            });
+    }
+
+    void markSpamAsNonSpam(stack<Email*>& spamStack, const string& userEmail) {
+        modifyEmailInStack(spamStack, [](Email* email) {
+            email->isSpam = false;
+            });
+    }
+
+    // Function to save the updated stack of emails back to the file
+    void saveEmails(stack<Email*> emailStack, const string& userEmail) {
+        // Logic to read all emails from "email.txt" and save updated emails
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt for reading.\n";
@@ -233,116 +259,43 @@ private:
 
             fileEmail.isSpam = (isSpamStr == "1");
 
-            // Check if this is the email to modify
-            if (fileEmail.subject == emailToModify.subject &&
-                fileEmail.sender == emailToModify.sender &&
-                fileEmail.receiver == emailToModify.receiver &&
-                fileEmail.date == emailToModify.date &&
-                fileEmail.time == emailToModify.time &&
-                fileEmail.content == emailToModify.content) {
-                // Mark this email as non-spam by setting isSpam to 0
-                outFile << receiverDeletedStr << ","
-                    << senderDeletedStr << ","
-                    << fileEmail.subject << ","
-                    << fileEmail.sender << ","
-                    << fileEmail.receiver << ","
-                    << fileEmail.date << ","
-                    << fileEmail.time << ","
-                    << fileEmail.content << ",0\n"; // Set isSpam to 0
+            // Compare with updated stack emails
+            bool modified = false;
+            stack<Email*> tempStack = emailStack;
+
+            while (!tempStack.empty()) {
+                Email* modifiedEmail = tempStack.top();
+                tempStack.pop();
+
+                if (fileEmail.subject == modifiedEmail->subject &&
+                    fileEmail.sender == modifiedEmail->sender &&
+                    fileEmail.receiver == modifiedEmail->receiver &&
+                    fileEmail.date == modifiedEmail->date &&
+                    fileEmail.time == modifiedEmail->time &&
+                    fileEmail.content == modifiedEmail->content) {
+
+                    outFile << (modifiedEmail->receiverDeleted ? "1" : "0") << ","
+                        << (modifiedEmail->senderDeleted ? "1" : "0") << ","
+                        << modifiedEmail->subject << "," << modifiedEmail->sender << ","
+                        << modifiedEmail->receiver << "," << modifiedEmail->date << ","
+                        << modifiedEmail->time << "," << modifiedEmail->content << ","
+                        << (modifiedEmail->isSpam ? "1" : "0") << "\n";
+                    modified = true;
+                    break;
+                }
             }
-            else {
-                // Otherwise, write the email as it is
-                outFile << receiverDeletedStr << ","
-                    << senderDeletedStr << ","
-                    << fileEmail.subject << ","
-                    << fileEmail.sender << ","
-                    << fileEmail.receiver << ","
-                    << fileEmail.date << ","
-                    << fileEmail.time << ","
-                    << fileEmail.content << ","
-                    << isSpamStr << "\n";
+
+            if (!modified) {
+                outFile << line << "\n";
             }
         }
 
         emailFile.close();
         outFile.close();
 
-        // Replace the original file with the updated file
+        // Replace original file
         remove("email.txt");
         rename("temp_email.txt", "email.txt");
-    }
-
-    // Function to save updated emails back to the file after deleting a spam email
-    void saveEmailsAfterDeletion(const Email& emailToDelete) {
-        ifstream emailFile("email.txt");
-        if (!emailFile.is_open()) {
-            cerr << "Failed to open email.txt for reading.\n";
-            return;
-        }
-
-        ofstream outFile("temp_email.txt"); // Use a temporary file for writing
-        if (!outFile.is_open()) {
-            cerr << "Failed to open temp_email.txt for writing.\n";
-            emailFile.close();
-            return;
-        }
-
-        string line;
-        while (getline(emailFile, line)) {
-            istringstream iss(line);
-            Email fileEmail;
-            string receiverDeletedStr, senderDeletedStr, isSpamStr;
-            getline(iss, receiverDeletedStr, ',');
-            getline(iss, senderDeletedStr, ',');
-            getline(iss, fileEmail.subject, ',');
-            getline(iss, fileEmail.sender, ',');
-            getline(iss, fileEmail.receiver, ',');
-            getline(iss, fileEmail.date, ',');
-            getline(iss, fileEmail.time, ',');
-            getline(iss, fileEmail.content, ',');
-            getline(iss, isSpamStr);
-
-            fileEmail.isSpam = (isSpamStr == "1");
-
-            // Check if this is the email to delete
-            if (fileEmail.subject == emailToDelete.subject &&
-                fileEmail.sender == emailToDelete.sender &&
-                fileEmail.receiver == emailToDelete.receiver &&
-                fileEmail.date == emailToDelete.date &&
-                fileEmail.time == emailToDelete.time &&
-                fileEmail.content == emailToDelete.content) {
-                // Skip writing this email to effectively delete it
-                continue;
-            }
-
-            // Otherwise, write the email to the output file
-            outFile << receiverDeletedStr << ","
-                << senderDeletedStr << ","
-                << fileEmail.subject << ","
-                << fileEmail.sender << ","
-                << fileEmail.receiver << ","
-                << fileEmail.date << ","
-                << fileEmail.time << ","
-                << fileEmail.content << ","
-                << isSpamStr << "\n";
-        }
-
-        emailFile.close();
-        outFile.close();
-
-        // Replace the original file with the updated file
-        remove("email.txt");
-        rename("temp_email.txt", "email.txt");
-    }
-
-
-    // Function to free the linked list memory
-    void freeEmailList(Email* head) {
-        while (head != nullptr) {
-            Email* temp = head;
-            head = head->next;
-            delete temp;
-        }
     }
 };
 
