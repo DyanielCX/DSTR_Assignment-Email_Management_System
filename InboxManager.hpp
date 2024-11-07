@@ -86,15 +86,20 @@ public:
             }
             else if (choice == 'm' || choice == 'M') {
                 inInboxMenu = false;
+                continue;
             }
             else {
                 cout << "Invalid choice. Please try again.\n";
+                continue;
             }
 
             // Save the updated emails
             saveEmails(emailStack, userEmail);
 
-            // Refresh screen
+            // Refresh the email stack to reflect the deletion or spam marking
+            emailStack = loadEmailsToStack(userEmail);
+
+            // Clear screen to display updated inbox
             clearscreen();
         }
     }
@@ -114,7 +119,6 @@ private:
         return spamUsers;
     }
 
-    // Load emails into a sorted linked list and then push into a stack
     stack<Email*> loadEmailsToStack(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
@@ -161,12 +165,19 @@ private:
         }
         emailFile.close();
 
-        // Push sorted emails into the stack
-        stack<Email*> emailStack;
+        // Push sorted emails into a temporary stack (to reverse order)
+        stack<Email*> tempStack;
         Email* current = sortedListHead;
         while (current != nullptr) {
-            emailStack.push(current);
+            tempStack.push(current);
             current = current->next;
+        }
+
+        // Reverse the stack by pushing from tempStack to emailStack
+        stack<Email*> emailStack;
+        while (!tempStack.empty()) {
+            emailStack.push(tempStack.top());
+            tempStack.pop();
         }
 
         return emailStack;
@@ -189,7 +200,6 @@ private:
         return head;
     }
 
-    // Modify an email in the stack with a flexible modification function
     template <typename Func>
     void modifyEmailInStack(stack<Email*>& emailStack, Func modifyFunc) {
         stack<Email*> tempStack;
@@ -197,26 +207,33 @@ private:
         cout << "\nEnter the number of the email you want to modify: ";
         cin >> index;
 
-        int currentIndex = 1;
-        while (!emailStack.empty() && currentIndex < index) {
+        // Reverse the stack to access emails in display order (oldest at top)
+        while (!emailStack.empty()) {
             tempStack.push(emailStack.top());
             emailStack.pop();
+        }
+
+        // Apply the modification function to the specified email in display order
+        int currentIndex = 1;
+        bool modified = false;
+
+        while (!tempStack.empty()) {
+            Email* currentEmail = tempStack.top();
+            tempStack.pop();
+
+            if (currentIndex == index) {
+                // Apply the modification function to the selected email
+                modifyFunc(currentEmail);
+                cout << "Email " << index << " modified successfully.\n";
+                modified = true;
+            }
+
+            emailStack.push(currentEmail); // Restore email to original stack
             currentIndex++;
         }
 
-        if (!emailStack.empty()) {
-            // Apply the modification function to the target email
-            modifyFunc(emailStack.top());
-            cout << "Email modified successfully.\n";
-        }
-        else {
+        if (!modified) {
             cout << "Invalid choice. No email was modified.\n";
-        }
-
-        // Restore the stack to its original order
-        while (!tempStack.empty()) {
-            emailStack.push(tempStack.top());
-            tempStack.pop();
         }
     }
 
@@ -245,26 +262,100 @@ private:
     }
 
     void saveEmails(stack<Email*> emailStack, const string& userEmail) {
-        ofstream outFile("temp_email.txt");
-        if (!outFile.is_open()) {
-            cerr << "Failed to open temp_email.txt for writing.\n";
+        // Step 1: Load all emails from the original file into a linked list
+        ifstream emailFile("email.txt");
+        if (!emailFile.is_open()) {
+            cerr << "Failed to open email.txt\n";
             return;
         }
 
+        Email* emailListHead = nullptr;  // Linked list to store all emails
+        Email* emailListTail = nullptr;
+        string line;
+
+        while (getline(emailFile, line)) {
+            istringstream iss(line);
+            Email* email = new Email();
+
+            // Parse each field in the line
+            string receiverDeletedStr, senderDeletedStr, isSpamStr;
+            getline(iss, receiverDeletedStr, ',');
+            getline(iss, senderDeletedStr, ',');
+            getline(iss, email->subject, ',');
+            getline(iss, email->sender, ',');
+            getline(iss, email->receiver, ',');
+            getline(iss, email->date, ',');
+            getline(iss, email->time, ',');
+            getline(iss, email->content, ',');
+            getline(iss, isSpamStr);
+
+            email->receiverDeleted = (receiverDeletedStr == "1");
+            email->senderDeleted = (senderDeletedStr == "1");
+            email->isSpam = (isSpamStr == "1");
+
+            // Append email to the linked list
+            if (emailListHead == nullptr) {
+                emailListHead = email;
+                emailListTail = email;
+            }
+            else {
+                emailListTail->next = email;
+                emailListTail = email;
+            }
+        }
+        emailFile.close();
+
+        // Step 2: Apply modifications from emailStack to the linked list
+        stack<Email*> reversedStack;
         while (!emailStack.empty()) {
-            Email* email = emailStack.top();
-            outFile << (email->receiverDeleted ? "1" : "0") << ","
-                << (email->senderDeleted ? "1" : "0") << ","
-                << email->subject << "," << email->sender << ","
-                << email->receiver << "," << email->date << ","
-                << email->time << "," << email->content << ","
-                << (email->isSpam ? "1" : "0") << "\n";
+            reversedStack.push(emailStack.top());
             emailStack.pop();
         }
 
+        while (!reversedStack.empty()) {
+            Email* modifiedEmail = reversedStack.top();
+            reversedStack.pop();
+
+            // Find and update the corresponding email in the linked list
+            Email* current = emailListHead;
+            while (current != nullptr) {
+                if (current->subject == modifiedEmail->subject &&
+                    current->sender == modifiedEmail->sender &&
+                    current->receiver == modifiedEmail->receiver &&
+                    current->date == modifiedEmail->date &&
+                    current->time == modifiedEmail->time) {
+
+                    current->receiverDeleted = modifiedEmail->receiverDeleted;
+                    current->senderDeleted = modifiedEmail->senderDeleted;
+                    current->isSpam = modifiedEmail->isSpam;
+                    break;
+                }
+                current = current->next;
+            }
+        }
+
+        // Step 3: Write the entire linked list back to email.txt
+        ofstream outFile("email.txt");
+        if (!outFile.is_open()) {
+            cerr << "Failed to open email.txt for writing.\n";
+            return;
+        }
+
+        Email* current = emailListHead;
+        while (current != nullptr) {
+            outFile << (current->receiverDeleted ? "1" : "0") << ","
+                << (current->senderDeleted ? "1" : "0") << ","
+                << current->subject << "," << current->sender << ","
+                << current->receiver << "," << current->date << ","
+                << current->time << "," << current->content << ","
+                << (current->isSpam ? "1" : "0") << "\n";
+
+            Email* toDelete = current;
+            current = current->next;
+            delete toDelete;  // Free memory
+        }
+
         outFile.close();
-        remove("email.txt");
-        rename("temp_email.txt", "email.txt");
     }
 
     int compareDateTime(Email* email1, Email* email2) {
