@@ -29,7 +29,10 @@
     <Text Include="email.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="spam.txt">
+    <Text Include="spamuser.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="spamword.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
@@ -53,6 +56,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SpamManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EmailCreator.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OutboxManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

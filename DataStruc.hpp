@@ -16,6 +16,7 @@ struct Email {
     string time;
     string content;
     bool isSpam = false;
+	bool markSpam = false;
     Email* next = nullptr; // Pointer to the next Email in the linked list
 };
 
