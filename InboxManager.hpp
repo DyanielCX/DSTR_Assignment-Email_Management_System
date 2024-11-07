@@ -1,5 +1,5 @@
-#ifndef INBOX_MANAGER_H
-#define INBOX_MANAGER_H
+#ifndef INBOX_MANAGER_HPP
+#define INBOX_MANAGER_HPP
 
 #include <iostream>
 #include <fstream>
@@ -244,9 +244,19 @@ private:
 
     void markEmailAsSpam(Email* email, set<string>& spamUsers) {
         email->isSpam = true;
-        if (spamUsers.find(email->sender) == spamUsers.end()) {
+
+        // Ask user if they want to add the sender to spamuser.txt
+        char choice;
+        cout << "Would you like to mark the sender \"" << email->sender << "\" as a spam user? (y/n): ";
+        cin >> choice;
+
+        if ((choice == 'y' || choice == 'Y') && spamUsers.find(email->sender) == spamUsers.end()) {
             addSenderToSpamUserFile(email->sender);
             spamUsers.insert(email->sender);
+            cout << "Sender added to spam users.\n";
+        }
+        else {
+            cout << "Sender was not added to spam users.\n";
         }
     }
 
