@@ -91,6 +91,15 @@ private:
             return stack<Email*>();
         }
 
+        // Load spam users from spamuser.txt into a set
+        set<string> spamUsers;
+        ifstream spamUserFile("spamuser.txt");
+        string spamUserEmail;
+        while (getline(spamUserFile, spamUserEmail)) {
+            spamUsers.insert(spamUserEmail);
+        }
+        spamUserFile.close();
+
         Email* sortedListHead = nullptr;
         string line;
 
@@ -99,7 +108,7 @@ private:
             Email* newEmail = new Email();
 
             // Parse each field correctly
-            string receiverDeletedStr, senderDeletedStr, isSpamStr;
+            string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
             getline(iss, newEmail->subject, ',');
@@ -108,15 +117,22 @@ private:
             getline(iss, newEmail->date, ',');
             getline(iss, newEmail->time, ',');
             getline(iss, newEmail->content, ',');
-            getline(iss, isSpamStr);
+            getline(iss, isSpamStr, ',');
+            getline(iss, markSpamStr);
 
             newEmail->receiverDeleted = (receiverDeletedStr == "1");
             newEmail->senderDeleted = (senderDeletedStr == "1");
             newEmail->isSpam = (isSpamStr == "1");
+            newEmail->markSpam = (markSpamStr == "1");
             newEmail->next = nullptr;
 
-            // Add email to sorted list if it meets the criteria
-            if (newEmail->isSpam && newEmail->receiver == userEmail && !newEmail->receiverDeleted) {
+            // Check if the email meets the new spam criteria
+            bool isUserMarkedSpam = !newEmail->isSpam && newEmail->markSpam; // User-marked spam
+            bool isDetectedSpam = newEmail->isSpam && newEmail->markSpam;    // Detected as spam
+            bool isSenderInSpamList = spamUsers.find(newEmail->sender) != spamUsers.end(); // Sender marked as spam
+
+            if ((isUserMarkedSpam || isDetectedSpam || isSenderInSpamList) &&
+                newEmail->receiver == userEmail && !newEmail->receiverDeleted) {
                 sortedListHead = insertInOrder(sortedListHead, newEmail);
             }
             else {
@@ -126,19 +142,12 @@ private:
 
         emailFile.close();
 
-        // Push sorted emails into a temporary stack to reverse the order
-        stack<Email*> tempStack;
+        // Push sorted emails directly into the emailStack so latest emails are on top
+        stack<Email*> emailStack;
         Email* current = sortedListHead;
         while (current != nullptr) {
-            tempStack.push(current);
+            emailStack.push(current);
             current = current->next;
-        }
-
-        // Now push emails from the temporary stack into the final stack
-        stack<Email*> emailStack;
-        while (!tempStack.empty()) {
-            emailStack.push(tempStack.top());
-            tempStack.pop();
         }
 
         return emailStack;
