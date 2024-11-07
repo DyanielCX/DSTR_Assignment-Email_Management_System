@@ -28,15 +28,18 @@ public:
         cout << "*                  Send Email                    *" << endl;
         cout << "**************************************************" << endl;
 
+        // Clear the input buffer before using getline
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
         // Prompting for inputs
         cout << "To (Receiver's Email): ";
-        cin >> receiver;
+        getline(cin, receiver);
 
         cout << "Subject: ";
-        cin >> subject;
+        getline(cin, subject);
 
         cout << "Content: ";
-        cin >> content;
+        getline(cin, content);
 
         // Confirm the email details before sending
         cout << "\n--------------------------------------------------" << endl;
