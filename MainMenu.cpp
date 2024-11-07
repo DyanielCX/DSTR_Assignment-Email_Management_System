@@ -64,7 +64,7 @@ void displayMainMenu(const string& userEmail) {
         switch (choice) {
         case 1:
             cout << "Send Email selected.\n";
-            emailCreator.displaySendEmail();
+            emailCreator.displaySendEmail(userEmail);
             break;
         case 2:
             cout << "Inbox Management selected.\n";

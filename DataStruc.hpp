@@ -2,6 +2,7 @@
 #define DATASTRUC_HPP
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include "Utils.hpp"
 using namespace std;
@@ -42,7 +43,7 @@ public:
 		Email* newEmail = new Email();
 
 		// Parse each field correctly
-		string receiverDeletedStr, senderDeletedStr, isSpamStr;
+		string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
 		getline(iss, receiverDeletedStr, ',');
 		getline(iss, senderDeletedStr, ',');
 		getline(iss, newEmail->subject, ',');
@@ -51,11 +52,13 @@ public:
 		getline(iss, newEmail->date, ',');
 		getline(iss, newEmail->time, ',');
 		getline(iss, newEmail->content, ',');
-		getline(iss, isSpamStr);
+		getline(iss, isSpamStr, ',');
+		getline(iss, markSpamStr);
 
 		newEmail->receiverDeleted = (receiverDeletedStr == "1");
 		newEmail->senderDeleted = (senderDeletedStr == "1");
 		newEmail->isSpam = (isSpamStr == "1");
+		newEmail->markSpam = (markSpamStr == "1");
 		newEmail->next = nullptr;
 
 		// Only add emails that are for the current user
