@@ -334,7 +334,7 @@ private:
             }
         }
 
-        // Step 3: Write the entire linked list back to email.txt
+        // Step 3: Write the entire linked list back to email.txt, excluding emails where both receiverDeleted and senderDeleted are true
         ofstream outFile("email.txt");
         if (!outFile.is_open()) {
             cerr << "Failed to open email.txt for writing.\n";
@@ -343,12 +343,15 @@ private:
 
         Email* current = emailListHead;
         while (current != nullptr) {
-            outFile << (current->receiverDeleted ? "1" : "0") << ","
-                << (current->senderDeleted ? "1" : "0") << ","
-                << current->subject << "," << current->sender << ","
-                << current->receiver << "," << current->date << ","
-                << current->time << "," << current->content << ","
-                << (current->isSpam ? "1" : "0") << "\n";
+            // Only write the email back if it doesn't meet the condition for deletion
+            if (!(current->receiverDeleted && current->senderDeleted)) {
+                outFile << (current->receiverDeleted ? "1" : "0") << ","
+                    << (current->senderDeleted ? "1" : "0") << ","
+                    << current->subject << "," << current->sender << ","
+                    << current->receiver << "," << current->date << ","
+                    << current->time << "," << current->content << ","
+                    << (current->isSpam ? "1" : "0") << "\n";
+            }
 
             Email* toDelete = current;
             current = current->next;
@@ -357,6 +360,7 @@ private:
 
         outFile.close();
     }
+
 
     int compareDateTime(Email* email1, Email* email2) {
         if (email1->date != email2->date) return email1->date < email2->date ? -1 : 1;
