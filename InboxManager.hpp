@@ -170,7 +170,7 @@ private:
             newEmail->next = nullptr;
 
             // Check if the email meets display requirements or contains spam words
-            if (newEmail->receiver == userEmail && !newEmail->receiverDeleted &&
+            if (newEmail->receiver == userEmail && !newEmail->receiverDeleted && newEmail->markSpam == false &&
                 spamUsers.find(newEmail->sender) == spamUsers.end()) {
 
                 // Check for spam words in email content
