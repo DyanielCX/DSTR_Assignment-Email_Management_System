@@ -269,13 +269,20 @@ public:
                     // Check if the credentials are correct
                     if (authenticate(email, password)) {
                         clearscreen();
-                        cout << color_green << "\n\nAccess granted!\nWelcome, " << email << "!" << color_reset << "\n";
-                        this_thread::sleep_for(chrono::seconds(1));
+                        cout << "\n" << color_reset; // Reset to default for white border
+                        cout << "**************************************************\n";
+                        cout << "*                \033[1;33mLogin Successful!\033[0m               *\n";
+                        cout << "**************************************************\n";
+                        cout << "*                                                *\n";
+                        cout << "              \033[1;33mWelcome,\033[0m " << "\033[1;33m" << email << "\033[0m\n";
+                        cout << "*                                                *\n";
+                        cout << "**************************************************\n" << color_reset;
+                        this_thread::sleep_for(chrono::seconds(2));
 
-                        // Call the main menu after successful login
-                        displayMainMenu(email);
 
-                        return; // Exit the loginPage function after the user logs out
+                     // Call the main menu after successful login
+                        displayMainMenu(email);                     
+                        break;
                     }
                     else {
                         loginAttempts++;
@@ -295,15 +302,22 @@ public:
             }
             else if (choice == 3) {
                 clearscreen();
-                cout << color_green << "Exiting the system. Goodbye!" << color_reset << "\n";
+                cout << color_reset;
+                cout << "**************************************************\n";
+                cout << "*                                                *\n";
+                cout << "*         \033[1;33mExiting the System... Goodbye!\033[0m         *\n";
+                cout << "*                                                *\n";
+                cout << "**************************************************\n" << color_reset;
+                this_thread::sleep_for(chrono::seconds(2));
                 break;
             }
+
             else {
                 cout << color_red << "Invalid option. Please try again." << color_reset << "\n";
                 this_thread::sleep_for(chrono::seconds(1));
             }
         }
     }
-}; // <-- This closing brace ends the AccountManagement class
+};
 
 #endif // ACCOUNTSYSTEM_H
