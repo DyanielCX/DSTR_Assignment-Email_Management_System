@@ -11,14 +11,12 @@
 
 using namespace std;
 
-// Class to manage spam emails
 class SpamManager {
 public:
     void displaySpamEmails(const string& userEmail) {
         bool inSpamMenu = true;
 
         while (inSpamMenu) {
-            // Load spam emails into a stack with the oldest emails at the top
             stack<Email*> spamStack = loadSpamEmailsToStack(userEmail);
             if (spamStack.empty()) {
                 cout << "No spam emails found.\n";
@@ -33,10 +31,9 @@ public:
                         cout << "Invalid choice. Please try again.\n";
                     }
                 } while (inSpamMenu); // Only exit if user enters 'm'
-                return; // Exit the function after handling no spam emails
+                return;
             }
 
-            // Display spam emails with correct numbering
             stack<Email*> tempStack = spamStack; // Copy main stack for display
             int emailNumber = 1; // Start numbering from 1
 
@@ -54,7 +51,6 @@ public:
             }
             cout << "---------------------------------------------\n";
 
-            // Offer options to the user
             char choice;
             cout << "\nOptions:\n";
             cout << "d - Delete a spam email\n";
@@ -70,7 +66,7 @@ public:
                 markSpamAsNonSpam(spamStack, userEmail);
             }
             else if (choice == 'm' || choice == 'M') {
-                inSpamMenu = false; // Exit the loop to return to the main menu
+                inSpamMenu = false; 
             }
             else {
                 cout << "Invalid choice. Please try again.\n";
@@ -79,7 +75,6 @@ public:
             // Save the updated stack back to email.txt
             saveEmails(spamStack, userEmail);
 
-            // Clear screen to display updated inbox
             clearscreen();
         }
     }
@@ -92,7 +87,6 @@ private:
             return stack<Email*>();
         }
 
-        // Load spam users from spamuser.txt into a set
         set<string> spamUsers;
         ifstream spamUserFile("spamuser.txt");
         string spamUserEmail;
@@ -108,7 +102,6 @@ private:
             istringstream iss(line);
             Email* newEmail = new Email();
 
-            // Parse each field correctly
             string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
@@ -127,14 +120,13 @@ private:
             newEmail->markSpam = (markSpamStr == "1");
             newEmail->next = nullptr;
 
-            // Check if the email meets the spam criteria
             bool isUserMarkedSpam = !newEmail->isSpam && newEmail->markSpam; // User-marked spam
             bool isDetectedSpam = newEmail->isSpam && newEmail->markSpam;    // Detected as spam
             bool isSenderInSpamList = spamUsers.find(newEmail->sender) != spamUsers.end(); // Sender marked as spam
 
             if ((isUserMarkedSpam || isDetectedSpam || isSenderInSpamList) &&
                 newEmail->receiver == userEmail && !newEmail->receiverDeleted) {
-                sortedListHead = insertInOrder(sortedListHead, newEmail); // Insert in order
+                sortedListHead = insertInOrder(sortedListHead, newEmail); 
             }
             else {
                 delete newEmail;
@@ -156,8 +148,7 @@ private:
             current = next;
         }
 
-        // Now push reversed linked list onto the stack
-        current = prev;  // 'prev' is now the head of the reversed list
+        current = prev;  
         while (current != nullptr) {
             emailStack.push(current);
             current = current->next;
@@ -165,7 +156,6 @@ private:
 
         return emailStack;
     }
-
 
     // Insert emails into a linked list in sorted order by date and time
     Email* insertInOrder(Email* head, Email* newEmail) {
@@ -200,7 +190,7 @@ private:
 
     template <typename Func>
     void modifyEmailInStack(stack<Email*>& emailStack, Func modifyFunc) {
-        // Step 1: Transfer emails from stack to a temporary linked list in display order
+        // Transfer emails from stack to a temporary linked list in display order
         Email* emailListHead = nullptr;
         Email* tail = nullptr;
 
@@ -220,7 +210,7 @@ private:
             currentEmail->next = nullptr;  // Ensure end of list is clear
         }
 
-        // Step 2: Traverse the linked list to find the selected email
+        //Traverse the linked list to find the selected email
         int index;
         cout << "\nEnter the number of the spam email you want to modify: ";
         cin >> index;
@@ -245,7 +235,7 @@ private:
             cout << "Invalid choice. No spam email was modified.\n";
         }
 
-        // Step 3: Rebuild the stack in the original order from the linked list
+        //Rebuild the stack in the original order from the linked list
         current = emailListHead;
         stack<Email*> tempStack;
 
@@ -269,12 +259,69 @@ private:
     }
 
     void markSpamAsNonSpam(stack<Email*>& spamStack, const string& userEmail) {
-        modifyEmailInStack(spamStack, [](Email* email) {
+        string senderEmail;
+
+        modifyEmailInStack(spamStack, [&senderEmail](Email* email) {
             email->markSpam = false;  
+            senderEmail = email->sender;  
             });
+
+        if (!senderEmail.empty()) {
+            removeSenderFromSpamUserFile(senderEmail);
+        }
+
+        stack<Email*> tempStack;
+        while (!spamStack.empty()) {
+            Email* email = spamStack.top();
+            spamStack.pop();
+
+            if (email->sender == senderEmail) {
+                email->markSpam = false;
+            }
+            tempStack.push(email);
+        }
+
+        while (!tempStack.empty()) {
+            spamStack.push(tempStack.top());
+            tempStack.pop();
+        }
+        cout << "The selected email has been unmarked as spam.\n";
+        cout << "All other current emails from \"" << senderEmail << "\" have also been unmarked as spam.\n";
+        cout << "Future emails from \"" << senderEmail << "\" will no longer be marked as spam.\n";
+        cout << "Press Enter to continue...";
+        cin.ignore();
+        cin.get();
     }
 
-    // Function to save the updated stack of emails back to the file
+    void removeSenderFromSpamUserFile(const string& senderEmail) {
+        ifstream spamUserFile("spamuser.txt");
+        ofstream tempFile("temp_spamuser.txt");
+        string line;
+
+        if (!spamUserFile.is_open()) {
+            cerr << "Failed to open spamuser.txt for reading.\n";
+            return;
+        }
+
+        if (!tempFile.is_open()) {
+            cerr << "Failed to open temp_spamuser.txt for writing.\n";
+            spamUserFile.close();
+            return;
+        }
+
+        while (getline(spamUserFile, line)) {
+            if (line != senderEmail) {
+                tempFile << line << "\n";
+            }
+        }
+
+        spamUserFile.close();
+        tempFile.close();
+
+        remove("spamuser.txt");
+        rename("temp_spamuser.txt", "spamuser.txt");
+    }
+
     void saveEmails(stack<Email*> emailStack, const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
@@ -282,7 +329,7 @@ private:
             return;
         }
 
-        ofstream outFile("temp_email.txt"); // Use a temporary file for writing
+        ofstream outFile("temp_email.txt");
         if (!outFile.is_open()) {
             cerr << "Failed to open temp_email.txt for writing.\n";
             emailFile.close();
@@ -310,10 +357,7 @@ private:
             fileEmail.isSpam = (isSpamStr == "1");
             fileEmail.markSpam = (markSpamStr == "1");
 
-            // Check if this email is marked for deletion by both receiver and sender
             bool emailToDelete = fileEmail.receiverDeleted && fileEmail.senderDeleted;
-
-            // Compare with updated stack emails to apply any recent modifications
             bool modified = false;
             stack<Email*> tempStack = emailStack;
 
@@ -334,7 +378,6 @@ private:
                     fileEmail.isSpam = modifiedEmail->isSpam;
                     fileEmail.markSpam = modifiedEmail->markSpam;
 
-                    // Check again if this email should be deleted after modification
                     emailToDelete = fileEmail.receiverDeleted && fileEmail.senderDeleted;
 
                     modified = true;
@@ -357,7 +400,6 @@ private:
         emailFile.close();
         outFile.close();
 
-        // Replace the original file with the updated file
         remove("email.txt");
         rename("temp_email.txt", "email.txt");
     }
