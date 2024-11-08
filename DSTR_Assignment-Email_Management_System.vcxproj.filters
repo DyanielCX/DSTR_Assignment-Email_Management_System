@@ -64,5 +64,8 @@
     <ClInclude Include="OutboxManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SearchRetrieval.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

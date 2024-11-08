@@ -9,6 +9,7 @@
 #include <ctime>
 #include <iomanip>
 #include <thread>
+#include "SearchRetrieval.hpp"
 
 using namespace std;
 
@@ -19,6 +20,7 @@ void displayMainMenu(const string& userEmail) {
     OutboxManager outboxManager;
     SpamManager spamManager;
     ProfileEditor profileEditor;
+
 
     while (isRunning) {
         clearscreen();
@@ -74,9 +76,13 @@ void displayMainMenu(const string& userEmail) {
             cout << "Outbox Management selected.\n";
             outboxManager.displayOutbox(userEmail);
             break;
-        case 4:
-            cout << "Search and Retrieval selected.\n";
+        case 4: {
+        
+            SearchRetrieval searchRetrieval;
+            searchRetrieval.displaySearchMenu(userEmail);
             break;
+        }
+
         case 5:
             cout << "Spam Messages selected.\n";
             spamManager.displaySpamEmails(userEmail);
@@ -85,10 +91,12 @@ void displayMainMenu(const string& userEmail) {
             profileEditor.editProfileMenu(userEmail); // Open Edit Profile menu
             break;
         case 7:
-            cout << "Logging out...\n";
-            this_thread::sleep_for(chrono::seconds(1));
-            isRunning = false;
-            break;
+            cout << color_red;
+            cout << "\n**************************************************\n";
+            cout << "*                 Logged Out                     *\n";
+            cout << "**************************************************\n" << color_reset;
+            this_thread::sleep_for(chrono::seconds(2));
+            return;
         default:
             cout << "\033[31mInvalid choice. Please try again.\033[0m\n";
             this_thread::sleep_for(chrono::seconds(1));
