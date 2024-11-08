@@ -11,7 +11,7 @@
 
 using namespace std;
 
-Email_Queue emailQueue;
+Email_Queue outbox_emailQueue;
 
 // Class to manage the outbox
 class OutboxManager {
@@ -21,16 +21,14 @@ public:
         while (inOutboxMenu) {
             loadEmails(userEmail);
 
-            // Check for spam status but do not delete spam emails
-            Email* front = emailQueue.getFront();
-            detectAndMarkSpam(front);
+            // Get the front email in queue
+            Email* front = outbox_emailQueue.getFront();
 
-            // Check if there are any non-spam emails
-            bool hasNonSpamEmail = false;
+            // Set the email count
             int emailCount = 0;
 
-            for (Email* current = emailQueue.getFront(); current != nullptr; current = current->next) {
-                if (!current->isSpam) { // Only display non-spam emails for the current user
+            for (Email* current = outbox_emailQueue.getFront(); current != nullptr; current = current->next) {
+                if (!current->senderDeleted) { // Only display non-spam emails for the current user
                     emailCount++;
                     cout << "---------------------------------------------\n";
                     cout << "Email " << emailCount << ":\n";
@@ -42,7 +40,7 @@ public:
             }
 
             // If no non-spam emails were found, or if the list is empty, inform the user
-            if (emailQueue.empty()) {
+            if (outbox_emailQueue.empty()) {
                 cout << "No emails found for " << userEmail << ".\n";
                 char choice;
                 do {
@@ -81,7 +79,7 @@ public:
 
             // Save the updated emails (including spam status) and free the linked list memory
             saveEmails(front, userEmail);
-            emailQueue.clearQueue();
+            outbox_emailQueue.clearQueue();
         }
     }
 
@@ -110,53 +108,19 @@ private:
             return;
         }
 
-        emailQueue.clearQueue();
+        outbox_emailQueue.clearQueue();
 
         string line;
         while (getline(emailFile, line)) {
-            emailQueue.enqueue(line, userEmail);
+            outbox_emailQueue.enqueue(line, userEmail);
         }
 
         emailFile.close();
     }
 
-    // Function to detect spam and mark emails as spam
-    void detectAndMarkSpam(Email* front) {
-        Email* current = front;
-        while (current != nullptr) {
-            detectSpam(*current); // Mark the email as spam if necessary
-            current = current->next;
-        }
-    }
-
-    // Function to detect spam
-    void detectSpam(Email& email) {
-        ifstream spamFile("spamword.txt");
-        if (!spamFile.is_open()) {
-            cerr << "Failed to open spamword.txt\n";
-            return;
-        }
-
-        string spamWord;
-        while (getline(spamFile, spamWord)) {
-            // Convert both the email content and spam word to lowercase for case-insensitive comparison
-            string contentLower = email.content;
-            string spamWordLower = spamWord;
-            transform(contentLower.begin(), contentLower.end(), contentLower.begin(), ::tolower);
-            transform(spamWordLower.begin(), spamWordLower.end(), spamWordLower.begin(), ::tolower);
-
-            if (contentLower.find(spamWordLower) != string::npos) {
-                email.isSpam = true;
-                break;
-            }
-        }
-
-        spamFile.close();
-    }
-
     // Function to delete an email
     void deleteEmail(const string& userEmail) {
-        if (emailQueue.empty()) {
+        if (outbox_emailQueue.empty()) {
             cout << "No emails available to delete.\n";
             return;
         }
@@ -167,7 +131,7 @@ private:
         cin >> index;
 
         // Dequeue the selected email
-        emailQueue.dequeue(index);
+        outbox_emailQueue.dequeue(index);
     }
 
 
@@ -190,7 +154,7 @@ private:
         Email* current = front;
         while (getline(emailFile, line)) {
             istringstream iss(line);
-            string receiverDeletedStr, senderDeletedStr, subject, sender, receiver, date, time, content, isSpamStr;
+            string receiverDeletedStr, senderDeletedStr, subject, sender, receiver, date, time, content, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
             getline(iss, subject, ',');
@@ -199,7 +163,8 @@ private:
             getline(iss, date, ',');
             getline(iss, time, ',');
             getline(iss, content, ',');
-            getline(iss, isSpamStr);
+            getline(iss, isSpamStr, ',');
+            getline(iss, markSpamStr);
 
             // Check if this email belongs to the current user and if it needs to be saved
             if (sender == userEmail) {
@@ -210,13 +175,13 @@ private:
                     outFile << receiverDeletedStr << ","<< (current->senderDeleted ? "1" : "0") << "," 
                         << subject << "," << sender << ","
                         << receiver << "," << date << "," << time << ","
-                        << content << "," << isSpamStr << "\n";
+                        << content << "," << isSpamStr << "," << markSpamStr << "\n";
                     current = current->next;
                 }
                 else {
                     outFile << receiverDeletedStr << "," << senderDeletedStr << ","
                         << subject << "," << sender << "," << receiver << ","
-                        << date << "," << time << "," << content << "," << isSpamStr << "\n";
+                        << date << "," << time << "," << content << "," << isSpamStr << "," << markSpamStr << "\n";
                 }
             }
             else {
