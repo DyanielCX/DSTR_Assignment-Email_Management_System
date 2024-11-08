@@ -124,6 +124,7 @@ private:
         return resultHead;
     }
 
+    // Updated function to parse the new Email structure, including starred status
     Email* loadUserEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
@@ -138,9 +139,11 @@ private:
             istringstream iss(line);
             Email* email = new Email();
 
-            string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, email->subject, ',');
             getline(iss, email->sender, ',');
             getline(iss, email->receiver, ',');
@@ -150,8 +153,11 @@ private:
             getline(iss, isSpamStr, ',');
             getline(iss, markSpamStr);
 
+            // Set parsed values
             email->receiverDeleted = (receiverDeletedStr == "1");
             email->senderDeleted = (senderDeletedStr == "1");
+            email->senderStared = (senderStaredStr == "1");
+            email->receiverStared = (receiverStaredStr == "1");
             email->isSpam = (isSpamStr == "1");
             email->markSpam = (markSpamStr == "1");
 
@@ -190,6 +196,7 @@ private:
         return emailStack;
     }
 
+    // Updated to show starred status in display results
     void displayResults(stack<Email*> results, const string& userEmail) {
         if (results.empty()) {
             cout << "\033[31mNo emails found matching your search criteria.\033[0m\n";
@@ -205,16 +212,22 @@ private:
 
                 string emailType;
                 if (email->sender == userEmail && (email->isSpam || email->markSpam)) {
-                    emailType = "(Sent - Spammed)";
+                    emailType = "(Outbox - Spammed)";
                 }
                 else if (email->receiver == userEmail && (email->isSpam || email->markSpam)) {
-                    emailType = "(Received - Spammed)";
+                    emailType = "(Inbox - Spammed)";
                 }
                 else if (email->sender == userEmail) {
-                    emailType = "(Sent)";
+                    emailType = "(Outbox)";
                 }
                 else if (email->receiver == userEmail) {
-                    emailType = "(Received)";
+                    emailType = "(Inbox)";
+                }
+
+                // Show starred status
+                if ((email->sender == userEmail && email->senderStared) ||
+                    (email->receiver == userEmail && email->receiverStared)) {
+                    emailType += " \033[1;33m[Starred]\033[0m";
                 }
                 cout << emailType << "\033[0m\n";
 
