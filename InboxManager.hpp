@@ -18,16 +18,13 @@ public:
     void displayInbox(const string& userEmail) {
         bool inInboxMenu = true;
 
-        // Load spam users from spamuser.txt into a set
         set<string> spamUsers = loadSpamUsers();
 
-        // Load emails into a stack, with the nearest date at the bottom
         stack<Email*> emailStack = loadEmailsToStack(userEmail);
        
         while (inInboxMenu) {
-            stack<Email*> tempStack = emailStack; // Copy main stack to display emails without modifying it
+            stack<Email*> tempStack = emailStack;
 
-            // Check if there are any emails that should be displayed
             bool hasDisplayableEmail = false;
             int emailNumber = 1;  // Start email numbering from 1
 
@@ -65,7 +62,6 @@ public:
                 cout << "---------------------------------------------\n";
             }
 
-            // Offer options to the user
             char choice;
             cout << "\nOptions:\n";
             cout << "d - Delete an email\n";
@@ -89,20 +85,17 @@ public:
                 continue;
             }
 
-            // Save the updated emails
             saveEmails(emailStack, userEmail);
 
             // Refresh the email stack to reflect the deletion or spam marking
             emailStack = loadEmailsToStack(userEmail);
 
-            // Clear screen to display updated inbox
             clearscreen();
         }
     }
 
 
 private:
-    // Load spam users from spamuser.txt into a set
     set<string> loadSpamUsers() {
         set<string> spamUsers;
         ifstream spamUserFile("spamuser.txt");
@@ -143,14 +136,13 @@ private:
 
         Email* sortedListHead = nullptr;
         string line;
-        set<string> spamUsers = loadSpamUsers();  // Load spam users here
-        set<string> spamWords = loadSpamWords();  // Load spam words from spamword.txt
+        set<string> spamUsers = loadSpamUsers();  
+        set<string> spamWords = loadSpamWords();  
         bool updateNeed = false;
 
         while (getline(emailFile, line)) {
             istringstream iss(line);
             Email* newEmail = new Email();
-            // Parse each field correctly
             string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
@@ -169,25 +161,28 @@ private:
             newEmail->markSpam = (markSpamStr == "1");
             newEmail->next = nullptr;
 
-            // Check if the email meets display requirements or contains spam words
-            if (newEmail->receiver == userEmail && !newEmail->receiverDeleted && newEmail->markSpam == false &&
-                spamUsers.find(newEmail->sender) == spamUsers.end()) {
+            // Check if the email meets display requirements
+            if (newEmail->receiver == userEmail && !newEmail->receiverDeleted &&
+                spamUsers.find(newEmail->sender) == spamUsers.end() &&
+                !newEmail->markSpam) {  
 
-                // Check for spam words in email content
-                istringstream contentStream(newEmail->content);
-                string emailWord;
+                // Skip spam word check if isSpam is true but markSpam is false
+                if (!(newEmail->isSpam && !newEmail->markSpam)) {
+                    // Check for spam words in email content
+                    istringstream contentStream(newEmail->content);
+                    string emailWord;
 
-                while (contentStream >> emailWord) {
-                    emailWord.erase(remove_if(emailWord.begin(), emailWord.end(), ::ispunct), emailWord.end());
-                    if (spamWords.find(emailWord) != spamWords.end()) {
-                        newEmail->isSpam = true;
-                        newEmail->markSpam = true;
-                        updateNeed = true;
-                        break;
+                    while (contentStream >> emailWord) {
+                        emailWord.erase(remove_if(emailWord.begin(), emailWord.end(), ::ispunct), emailWord.end());
+                        if (spamWords.find(emailWord) != spamWords.end()) {
+                            newEmail->isSpam = true;
+                            newEmail->markSpam = true;
+                            updateNeed = true;
+                            break;
+                        }
                     }
                 }
 
-                // Add email to the list, even if it contains spam words, to ensure we update the file
                 sortedListHead = insertInOrder(sortedListHead, newEmail);
             }
             else {
@@ -196,7 +191,6 @@ private:
         }
         emailFile.close();
 
-        // Push sorted emails into a temporary stack (to reverse order)
         stack<Email*> tempStack;
         Email* current = sortedListHead;
         while (current != nullptr) {
@@ -204,7 +198,6 @@ private:
             current = current->next;
         }
 
-        // Reverse the stack by pushing from tempStack to emailStack
         stack<Email*> emailStack;
         while (!tempStack.empty()) {
             emailStack.push(tempStack.top());
@@ -238,7 +231,6 @@ private:
 
     template <typename Func>
     void modifyEmailInStack(stack<Email*>& emailStack, Func modifyFunc) {
-        // Transfer stack to a linked list to maintain the intended order
         Email* head = nullptr;
         Email* tail = nullptr;
 
@@ -256,7 +248,6 @@ private:
             }
         }
 
-        // Show the emails and let the user select one to modify
         int index;
         cout << "\nEnter the number of the email you want to modify: ";
         cin >> index;
@@ -267,7 +258,7 @@ private:
 
         while (current != nullptr) {
             if (currentIndex == index) {
-                modifyFunc(current); // Apply modification to selected email
+                modifyFunc(current); 
                 cout << "Email " << index << " modified successfully.\n";
                 modified = true;
                 break;
@@ -280,7 +271,6 @@ private:
             cout << "Invalid choice. No email was modified.\n";
         }
 
-        // Push back the emails to the stack in reverse to retain original stack order
         current = head;
         stack<Email*> tempStack;
 
@@ -302,9 +292,8 @@ private:
     }
 
     void markEmailAsSpam(Email* email, set<string>& spamUsers) {
-        email->markSpam = true; // Set markSpam to true
+        email->markSpam = true; 
 
-        // Ask user if they want to add the sender to spamuser.txt
         char choice;
         cout << "Would you like to mark the sender \"" << email->sender << "\" as a spam user? (y/n): ";
         cin >> choice;
@@ -331,7 +320,7 @@ private:
     }
 
     void saveEmails(stack<Email*> emailStack, const string& userEmail) {
-        // Step 1: Load all emails from the original file into a linked list
+        //Load all emails from the original file into a linked list
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
             cerr << "Failed to open email.txt\n";
@@ -346,7 +335,6 @@ private:
             istringstream iss(line);
             Email* email = new Email();
 
-            // Parse each field in the line
             string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
@@ -364,7 +352,6 @@ private:
             email->isSpam = (isSpamStr == "1");
             email->markSpam = (markSpamStr == "1");
 
-            // Append email to the linked list
             if (emailListHead == nullptr) {
                 emailListHead = email;
                 emailListTail = email;
@@ -384,7 +371,6 @@ while (!tempStack.empty()) {
     Email* originalEmail = tempStack.top();
     tempStack.pop();
 
-    // Create a new Email object with copied data
     Email* copiedEmail = new Email(*originalEmail);
     emailStackCopy.push(copiedEmail);
 }
@@ -412,11 +398,10 @@ while (!tempStack.empty()) {
                 current = current->next;
             }
 
-            // Clean up memory for modifiedEmail after updating
             delete modifiedEmail;
         }
 
-        // Step 3: Write the updated linked list back to email.txt
+        //Write the updated linked list back to email.txt
         ofstream outFile("email.txt");
         if (!outFile.is_open()) {
             cerr << "Failed to open email.txt for writing.\n";
@@ -425,7 +410,6 @@ while (!tempStack.empty()) {
 
         Email* current = emailListHead;
         while (current != nullptr) {
-            // Only write the email back if it doesn't meet the condition for deletion
             if (!(current->receiverDeleted && current->senderDeleted)) {
                 outFile << (current->receiverDeleted ? "1" : "0") << ","
                     << (current->senderDeleted ? "1" : "0") << ","
@@ -436,7 +420,6 @@ while (!tempStack.empty()) {
                     << (current->markSpam ? "1" : "0") << "\n";
             }
 
-            // Move to the next email and delete the current one to free memory
             Email* toDelete = current;
             current = current->next;
             delete toDelete;
