@@ -155,9 +155,11 @@ public:
         string line;
         while (getline(emailFile, line)) {
             istringstream iss(line);
-            string receiverDeletedStr, senderDeletedStr, subject, sender, receiver, date, time, content, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, subject, sender, receiver, date, time, content, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, subject, ',');
             getline(iss, sender, ',');
             getline(iss, receiver, ',');
@@ -173,6 +175,7 @@ public:
 
         // Insert line for new created email
         outFile << (newEmail->receiverDeleted ? "1" : "0") << "," << (newEmail->senderDeleted ? "1" : "0") << ","
+            << (newEmail->senderStared ? "1" : "0") << "," << (newEmail->receiverStared ? "1" : "0") << ","
             << newEmail->subject << "," << newEmail->sender << ","
             << newEmail->receiver << "," << newEmail->date << "," << newEmail->time << ","
             << newEmail->content << "," << (newEmail->isSpam ? "1" : "0") << ","
