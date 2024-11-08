@@ -6,12 +6,16 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
+#include <thread>
 #include <algorithm>
 #include "DataStruc.hpp"
 
 using namespace std;
 
-Email_Queue outbox_emailQueue;
+outboxEmail_Queue outbox_emailQueue;
 
 // Class to manage the outbox
 class OutboxManager {
@@ -31,11 +35,17 @@ public:
                 if (!current->senderDeleted) { // Only display non-spam emails for the current user
                     emailCount++;
                     cout << "---------------------------------------------\n";
+                    
+                    // Change the email to yellow color if the email is stared
+                    if (current->senderStared) {
+                        cout << "\033[33m <Stared>" << "\n";
+                    }
+
                     cout << "Email " << emailCount << ":\n";
                     cout << "Subject: " << current->subject << "\n";
                     cout << "Receiver: " << current->receiver << "\n";
                     cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
-                    cout << "Content: " << current->content << "\n";
+                    cout << "Content: " << current->content << "\033[0m\n";
                 }
             }
 
@@ -63,18 +73,31 @@ public:
             char choice;
             cout << "\nOptions:\n";
             cout << "d - Delete an email\n";
+            cout << "s - Star email\n";
             cout << "m - Return to the main menu\n";
             cout << "Enter your choice: ";
             cin >> choice;
 
             if (choice == 'd' || choice == 'D') {
-                deleteEmail(userEmail);
+                deleteEmail();
+            }
+            else if (choice == 's' || choice == 'S') {
+                starEmail();
             }
             else if (choice == 'm' || choice == 'M') {
+                outbox_emailQueue.clearQueue();
+
+                clearscreen();
+                cout << "Back to the menu...\n";
+                this_thread::sleep_for(chrono::seconds(1));
+                clearscreen();
                 inOutboxMenu = false; // Exit the loop to return to the main menu
             }
             else {
+                clearscreen();
                 cout << "Invalid choice. Please try again.\n";
+                this_thread::sleep_for(chrono::seconds(1));
+                clearscreen();
             }
 
             // Save the updated emails (including spam status) and free the linked list memory
@@ -92,6 +115,7 @@ private:
         return date.substr(0, 4) + "-" + date.substr(4, 2) + "-" + date.substr(6, 2);
     }
 
+
     // Function to format time from HHMMSS to HH:MM:SS
     string formatTime(const string& time) {
         if (time.length() != 6) {
@@ -100,6 +124,7 @@ private:
         return time.substr(0, 2) + ":" + time.substr(2, 2) + ":" + time.substr(4, 2);
     }
     
+
     // Function to load emails into a linked list, filtering only those for the current user
     void loadEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
@@ -118,8 +143,9 @@ private:
         emailFile.close();
     }
 
+
     // Function to delete an email
-    void deleteEmail(const string& userEmail) {
+    void deleteEmail() {
         if (outbox_emailQueue.empty()) {
             cout << "No emails available to delete.\n";
             return;
@@ -132,6 +158,41 @@ private:
 
         // Dequeue the selected email
         outbox_emailQueue.dequeue(index);
+    }
+
+
+    // Function to star an email
+    void starEmail() {
+        if (outbox_emailQueue.empty()) {
+            cout << "No emails available to star.\n";
+            return;
+        }
+
+        // Display the emails with index numbers to the user
+        cout << "\nEnter the number of the email you want to star: ";
+        int index;
+        cin >> index;
+
+        // Star the selected email
+        Email* selectedEmail = outbox_emailQueue.getEmail(index);
+
+        if (selectedEmail != nullptr) {
+            // Mark the email as deleted for the receiver
+            selectedEmail->senderStared = true;
+            clearscreen();
+            cout << "\033[33mEmail starred successfully.\033[0m\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+            return;
+        }
+        else {
+            // If the index is out of bounds or invalid
+            clearscreen();
+            cout << "Invalid choice. No email was starred.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+            return;
+        }
     }
 
 
@@ -154,9 +215,11 @@ private:
         Email* current = front;
         while (getline(emailFile, line)) {
             istringstream iss(line);
-            string receiverDeletedStr, senderDeletedStr, subject, sender, receiver, date, time, content, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, subject, sender, receiver, date, time, content, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, subject, ',');
             getline(iss, sender, ',');
             getline(iss, receiver, ',');
@@ -168,11 +231,12 @@ private:
 
             // Check if this email belongs to the current user and if it needs to be saved
             if (sender == userEmail) {
-                // Update the `receiverDeleted` flag if the email is found in the linked list
+                // Update the `senderDeleted` and `senderStared` flag if the email is found in the queue
                 if (current != nullptr && current->subject == subject && current->sender == sender &&
                     current->receiver == receiver && current->date == date && current->time == time &&
                     current->content == content) {
                     outFile << receiverDeletedStr << ","<< (current->senderDeleted ? "1" : "0") << "," 
+                        << (current->senderStared ? "1" : "0") << "," << receiverStaredStr << ","
                         << subject << "," << sender << ","
                         << receiver << "," << date << "," << time << ","
                         << content << "," << isSpamStr << "," << markSpamStr << "\n";
@@ -180,6 +244,7 @@ private:
                 }
                 else {
                     outFile << receiverDeletedStr << "," << senderDeletedStr << ","
+                        << senderStaredStr << "," << receiverStaredStr << ","
                         << subject << "," << sender << "," << receiver << ","
                         << date << "," << time << "," << content << "," << isSpamStr << "," << markSpamStr << "\n";
                 }
