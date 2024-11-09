@@ -102,9 +102,11 @@ private:
             istringstream iss(line);
             Email* newEmail = new Email();
 
-            string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, newEmail->subject, ',');
             getline(iss, newEmail->sender, ',');
             getline(iss, newEmail->receiver, ',');
@@ -116,6 +118,8 @@ private:
 
             newEmail->receiverDeleted = (receiverDeletedStr == "1");
             newEmail->senderDeleted = (senderDeletedStr == "1");
+            newEmail->senderStared = (senderStaredStr == "1");
+            newEmail->receiverStared = (receiverStaredStr == "1");
             newEmail->isSpam = (isSpamStr == "1");
             newEmail->markSpam = (markSpamStr == "1");
             newEmail->next = nullptr;
@@ -340,9 +344,11 @@ private:
         while (getline(emailFile, line)) {
             istringstream iss(line);
             Email fileEmail;
-            string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, fileEmail.subject, ',');
             getline(iss, fileEmail.sender, ',');
             getline(iss, fileEmail.receiver, ',');
@@ -354,6 +360,8 @@ private:
 
             fileEmail.receiverDeleted = (receiverDeletedStr == "1");
             fileEmail.senderDeleted = (senderDeletedStr == "1");
+            fileEmail.senderStared = (senderStaredStr == "1");
+            fileEmail.receiverStared = (receiverStaredStr == "1");
             fileEmail.isSpam = (isSpamStr == "1");
             fileEmail.markSpam = (markSpamStr == "1");
 
@@ -375,6 +383,8 @@ private:
                     // Apply recent modifications from the stack
                     fileEmail.receiverDeleted = modifiedEmail->receiverDeleted;
                     fileEmail.senderDeleted = modifiedEmail->senderDeleted;
+                    fileEmail.senderStared = modifiedEmail->senderStared;
+                    fileEmail.receiverStared = modifiedEmail->receiverStared;
                     fileEmail.isSpam = modifiedEmail->isSpam;
                     fileEmail.markSpam = modifiedEmail->markSpam;
 
@@ -389,6 +399,8 @@ private:
             if (!emailToDelete) {
                 outFile << (fileEmail.receiverDeleted ? "1" : "0") << ","
                     << (fileEmail.senderDeleted ? "1" : "0") << ","
+                    << fileEmail.senderStared << ","
+                    << fileEmail.receiverStared << ","
                     << fileEmail.subject << "," << fileEmail.sender << ","
                     << fileEmail.receiver << "," << fileEmail.date << ","
                     << fileEmail.time << "," << fileEmail.content << ","

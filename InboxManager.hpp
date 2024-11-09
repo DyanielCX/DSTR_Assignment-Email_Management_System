@@ -152,7 +152,6 @@ private:
         string line;
         set<string> spamUsers = loadSpamUsers();  
         set<string> spamWords = loadSpamWords();  
-        bool updateNeed = false;
 
         while (getline(emailFile, line)) {
             istringstream iss(line);
@@ -182,7 +181,7 @@ private:
             // Check if the email meets display requirements
             if (newEmail->receiver == userEmail && !newEmail->receiverDeleted &&
                 spamUsers.find(newEmail->sender) == spamUsers.end() &&
-                !newEmail->markSpam) {  
+                !newEmail->markSpam) {
 
                 // Skip spam word check if isSpam is true but markSpam is false
                 if (!(newEmail->isSpam && !newEmail->markSpam)) {
@@ -191,11 +190,13 @@ private:
                     string emailWord;
 
                     while (contentStream >> emailWord) {
+                        // Remove punctuation and convert to lowercase
                         emailWord.erase(remove_if(emailWord.begin(), emailWord.end(), ::ispunct), emailWord.end());
+                        transform(emailWord.begin(), emailWord.end(), emailWord.begin(), ::tolower);
+
                         if (spamWords.find(emailWord) != spamWords.end()) {
                             newEmail->isSpam = true;
                             newEmail->markSpam = true;
-                            updateNeed = true;
                             break;
                         }
                     }
@@ -221,12 +222,8 @@ private:
             emailStack.push(tempStack.top());
             tempStack.pop();
         }
-
-        // Update email.txt if any spam status has changed
-        if (updateNeed) {         
-            saveEmails(emailStack, userEmail);    
-        }
-
+        
+        saveEmails(emailStack, userEmail);    
         return emailStack;
     }
 
@@ -431,16 +428,16 @@ private:
         emailFile.close();
 
         stack<Email*> emailStackCopy;
-stack<Email*> tempStack = emailStack;
+        stack<Email*> tempStack = emailStack;
 
-// Deep-copy each Email object
-while (!tempStack.empty()) {
-    Email* originalEmail = tempStack.top();
-    tempStack.pop();
+        // Deep-copy each Email object
+        while (!tempStack.empty()) {
+            Email* originalEmail = tempStack.top();
+            tempStack.pop();
 
-    Email* copiedEmail = new Email(*originalEmail);
-    emailStackCopy.push(copiedEmail);
-}
+            Email* copiedEmail = new Email(*originalEmail);
+            emailStackCopy.push(copiedEmail);
+        }
 
         while (!emailStackCopy.empty()) {
             Email* modifiedEmail = emailStackCopy.top();
