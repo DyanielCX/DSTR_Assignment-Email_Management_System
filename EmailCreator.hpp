@@ -61,7 +61,7 @@ public:
         switch (option) {
         case 1:
             clearscreen();
-            cout << "Sending email..." << endl;
+            cout << "\033[33mSending email...\033[0m" << endl;
             this_thread::sleep_for(chrono::seconds(1));
             clearscreen();
 
@@ -72,9 +72,11 @@ public:
             saveEmails(newEmail);
 
             // Email send succesful message
+            cout << "\033[32m" << endl;
             cout << "**********************************************" << endl;
             cout << "*          Email Sent Successfully           *" << endl;
             cout << "**********************************************" << endl;
+            cout << "\033[0m" << endl;
 
             this_thread::sleep_for(chrono::seconds(1));
             clearscreen();
@@ -95,7 +97,7 @@ public:
             break;
         default:
             clearscreen();
-            cout << "Invalid option. Returning to main menu." << endl;
+            cout << "\033[31mInvalid option. Returning to main menu.\033[0m" << endl;
             this_thread::sleep_for(chrono::seconds(1));
             clearscreen();
             break;
@@ -141,13 +143,13 @@ public:
     void saveEmails(Email* newEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
-            cerr << "Failed to open email.txt for reading.\n";
+            cerr << "\033[31mFailed to open email.txt for reading.\033[0m\n";
             return;
         }
 
         ofstream outFile("temp_email.txt"); // Use a temporary file for writing
         if (!outFile.is_open()) {
-            cerr << "Failed to open temp_email.txt for writing.\n";
+            cerr << "\033[31mFailed to open temp_email.txt for writing.\033[0m\n";
             emailFile.close();
             return;
         }

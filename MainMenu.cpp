@@ -1,6 +1,8 @@
 #include "EmailCreator.hpp"
 #include "InboxManager.hpp"
 #include "OutboxManager.hpp"
+#include "StarPrio.hpp"
+#include "SearchRetrieval.hpp"
 #include "SpamManager.hpp"
 #include "EditProfile.hpp"
 #include "Utils.hpp"
@@ -9,7 +11,7 @@
 #include <ctime>
 #include <iomanip>
 #include <thread>
-#include "SearchRetrieval.hpp"
+
 
 using namespace std;
 
@@ -18,6 +20,7 @@ void displayMainMenu(const string& userEmail) {
     EmailCreator emailCreator;
     InboxManager inboxManager;
     OutboxManager outboxManager;
+    StarPrio starPrio;
     SpamManager spamManager;
     ProfileEditor profileEditor;
 
@@ -51,10 +54,11 @@ void displayMainMenu(const string& userEmail) {
         cout << "1. Send Email\n";
         cout << "2. Inbox Management\n";
         cout << "3. Outbox Management\n";
-        cout << "4. Search and Retrieval\n";
-        cout << "5. Spam Messages\n";
-        cout << "6. Edit Profile\n";
-        cout << "7. Log Out\n";
+        cout << "4. Starred Email\n";
+        cout << "5. Search and Retrieval\n";
+        cout << "6. Spam Messages\n";
+        cout << "7. Edit Profile\n";
+        cout << "8. Log Out\n";
         cout << "Choose an option: ";
 
         int choice;
@@ -66,31 +70,53 @@ void displayMainMenu(const string& userEmail) {
         switch (choice) {
         case 1:
             cout << "Send Email selected.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+
             emailCreator.displaySendEmail(userEmail);
             break;
         case 2:
             cout << "Inbox Management selected.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+
             inboxManager.displayInbox(userEmail);
             break;
         case 3:
             cout << "Outbox Management selected.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+
             outboxManager.displayOutbox(userEmail);
             break;
         case 4: {
-        
+            cout << "Starred Email selected.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+
+            starPrio.displayStarEmail(userEmail);
+            break;
+        }
+        case 5: {
+            cout << "Search and Retrieval selected.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+            
             SearchRetrieval searchRetrieval;
             searchRetrieval.displaySearchMenu(userEmail);
             break;
         }
-
-        case 5:
+        case 6:
             cout << "Spam Messages selected.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+
             spamManager.displaySpamEmails(userEmail);
             break;
-        case 6:
+        case 7:
             profileEditor.editProfileMenu(userEmail); // Open Edit Profile menu
             break;
-        case 7:
+        case 8:
             cout << color_red;
             cout << "\n**************************************************\n";
             cout << "*                 Logged Out                     *\n";

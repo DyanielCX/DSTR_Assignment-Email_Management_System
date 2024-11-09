@@ -1,6 +1,10 @@
 #ifndef INBOX_MANAGER_HPP
 #define INBOX_MANAGER_HPP
 
+#include <chrono>
+#include <iomanip>
+#include <ctime>
+#include <thread>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -35,11 +39,17 @@ public:
                 if (!current->markSpam) {
                     hasDisplayableEmail = true;
                     cout << "---------------------------------------------\n";
+
+                    // Change the email to yellow color if the email is stared
+                    if (current->receiverStared) {
+                        cout << "\033[33m <Stared>" << "\n";
+                    }
+
                     cout << "Email " << emailNumber++ << ":\n";
                     cout << "Subject: " << current->subject << "\n";
                     cout << "Sender: " << current->sender << "\n";
                     cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
-                    cout << "Content: " << current->content << "\n";
+                    cout << "Content: " << current->content << "\033[0m\n";
                 }
             }
 
@@ -66,6 +76,7 @@ public:
             cout << "\nOptions:\n";
             cout << "d - Delete an email\n";
             cout << "s - Mark an email as spam\n";
+            cout << "p - Star email\n";
             cout << "m - Return to the main menu\n";
             cout << "Enter your choice: ";
             cin >> choice;
@@ -75,6 +86,9 @@ public:
             }
             else if (choice == 's' || choice == 'S') {
                 modifyEmailInStack(emailStack, [this, &spamUsers](Email* email) { markEmailAsSpam(email, spamUsers); });
+            }
+            else if (choice == 'p' || choice == 'P') {
+                starEmail(emailStack);
             }
             else if (choice == 'm' || choice == 'M') {
                 inInboxMenu = false;
@@ -143,9 +157,11 @@ private:
         while (getline(emailFile, line)) {
             istringstream iss(line);
             Email* newEmail = new Email();
-            string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, newEmail->subject, ',');
             getline(iss, newEmail->sender, ',');
             getline(iss, newEmail->receiver, ',');
@@ -157,6 +173,8 @@ private:
 
             newEmail->receiverDeleted = (receiverDeletedStr == "1");
             newEmail->senderDeleted = (senderDeletedStr == "1");
+            newEmail->senderStared = (senderStaredStr == "1");
+            newEmail->receiverStared = (receiverStaredStr == "1");
             newEmail->isSpam = (isSpamStr == "1");
             newEmail->markSpam = (markSpamStr == "1");
             newEmail->next = nullptr;
@@ -319,6 +337,51 @@ private:
         }
     }
 
+
+    // Function to star an email
+    void starEmail(stack<Email*>& emailStack) {
+        int emailIndex;
+        cout << "\nEnter the number of the email you want to star: ";
+        cin >> emailIndex;
+
+        Email* current = nullptr;
+        stack<Email*> tempStack;
+        int currentIndex = 1;
+        bool emailFound = false;
+
+        // Unstack emails to find the targeted email and re-stack them
+        while (!emailStack.empty()) {
+            current = emailStack.top();
+            emailStack.pop();
+
+            if (currentIndex == emailIndex) {
+                current->receiverStared = true;
+                
+                clearscreen();
+                cout << "\033[32mEmail starred successfully.\033[0m\n";
+                this_thread::sleep_for(chrono::seconds(1));
+                clearscreen();
+                emailFound = true;
+            }
+            tempStack.push(current);
+            currentIndex++;
+        }
+
+        // Re-stack the emails back to emailStack
+        while (!tempStack.empty()) {
+            emailStack.push(tempStack.top());
+            tempStack.pop();
+        }
+
+        if (!emailFound) {
+            // If the index is out of bounds or invalid
+            clearscreen();
+            cout << "Invalid choice. No email was starred.\n";
+            this_thread::sleep_for(chrono::seconds(1));
+            clearscreen();
+        }
+    }
+
     void saveEmails(stack<Email*> emailStack, const string& userEmail) {
         //Load all emails from the original file into a linked list
         ifstream emailFile("email.txt");
@@ -335,9 +398,11 @@ private:
             istringstream iss(line);
             Email* email = new Email();
 
-            string receiverDeletedStr, senderDeletedStr, isSpamStr, markSpamStr;
+            string receiverDeletedStr, senderDeletedStr, senderStaredStr, receiverStaredStr, isSpamStr, markSpamStr;
             getline(iss, receiverDeletedStr, ',');
             getline(iss, senderDeletedStr, ',');
+            getline(iss, senderStaredStr, ',');
+            getline(iss, receiverStaredStr, ',');
             getline(iss, email->subject, ',');
             getline(iss, email->sender, ',');
             getline(iss, email->receiver, ',');
@@ -349,6 +414,8 @@ private:
 
             email->receiverDeleted = (receiverDeletedStr == "1");
             email->senderDeleted = (senderDeletedStr == "1");
+            email->senderStared = (senderStaredStr == "1");
+            email->receiverStared = (receiverStaredStr == "1");
             email->isSpam = (isSpamStr == "1");
             email->markSpam = (markSpamStr == "1");
 
@@ -391,6 +458,8 @@ while (!tempStack.empty()) {
                     // Update the spam status and deletion flags based on modifications
                     current->receiverDeleted = modifiedEmail->receiverDeleted;
                     current->senderDeleted = modifiedEmail->senderDeleted;
+                    current->senderStared = modifiedEmail->senderStared;
+                    current->receiverStared = modifiedEmail->receiverStared;
                     current->isSpam = modifiedEmail->isSpam;
                     current->markSpam = modifiedEmail->markSpam;
                     break;
@@ -413,6 +482,8 @@ while (!tempStack.empty()) {
             if (!(current->receiverDeleted && current->senderDeleted)) {
                 outFile << (current->receiverDeleted ? "1" : "0") << ","
                     << (current->senderDeleted ? "1" : "0") << ","
+                    << current->senderStared << ","
+                    << (current->receiverStared ? "1" : "0") << ","
                     << current->subject << "," << current->sender << ","
                     << current->receiver << "," << current->date << ","
                     << current->time << "," << current->content << ","

@@ -1,6 +1,6 @@
-// OutboxManager.hpp
-#ifndef OUTBOX_MANAGER_HPP
-#define OUTBOX_MANAGER_HPP
+// StarPrio.hpp
+#ifndef STAR_PRIO_HPP
+#define STAR_PRIO_HPP
 
 #include <iostream>
 #include <fstream>
@@ -15,34 +15,38 @@
 
 using namespace std;
 
-outboxEmail_Queue outbox_emailQueue;
+Star_priorityQueue star_priorityQueue;
 
-// Class to manage the outbox
-class OutboxManager {
+// Class to manage the starred email
+class StarPrio {
 public:
-    void displayOutbox(const string& userEmail) {
-        bool OutboxMenu = true;
-        while (OutboxMenu) {
+    void displayStarEmail(const string& userEmail) {
+        bool StarPrioMenu = true;
+        while (StarPrioMenu) {
+            
+            // Clear queue and load email into queue
+            star_priorityQueue.clearQueue();
             loadEmails(userEmail);
 
-            // Get the front email in queue
-            Email* front = outbox_emailQueue.getFront();
+            // Get the highfront email in queue
+            Email* front = star_priorityQueue.getHighfront();
 
             // Set the email count
             int emailCount = 0;
 
             for (Email* current = front; current != nullptr; current = current->next) {
-                if (!current->senderDeleted) { // Only display non-deleted emails for the current user
+                if ((userEmail == current->sender && !current->senderDeleted) || (userEmail == current->receiver && !current->receiverDeleted)) {
                     emailCount++;
                     cout << "---------------------------------------------\n";
-                    
+
                     // Change the email to yellow color if the email is stared
-                    if (current->senderStared) {
+                    if (current->senderStared || current->receiverStared) {
                         cout << "\033[33m <Stared>" << "\n";
                     }
 
                     cout << "Email " << emailCount << ":\n";
                     cout << "Subject: " << current->subject << "\n";
+                    cout << "Sender: " << current->sender << "\n";
                     cout << "Receiver: " << current->receiver << "\n";
                     cout << "Date: " << formatDate(current->date) << " Time: " << formatTime(current->time) << "\n";
                     cout << "Content: " << current->content << "\033[0m\n";
@@ -50,8 +54,8 @@ public:
             }
 
             // If no non-spam emails were found, or if the list is empty, inform the user
-            if (outbox_emailQueue.empty()) {
-                cout << "No emails found for " << userEmail << ".\n";
+            if (star_priorityQueue.highEmpty()) {
+                cout << "\033[31mNo emails found for \033[0m" << userEmail << ".\n";
                 char choice;
                 do {
                     cout << "Enter 'm' to go back to the main menu: ";
@@ -60,7 +64,7 @@ public:
                         cout << "Back to the menu...\n";
                         this_thread::sleep_for(chrono::seconds(1));
                         clearscreen();
-                        OutboxMenu = false; // Exit the loop to return to the main menu
+                        StarPrioMenu = false; // Exit the loop
                         return;
                     }
                     else {
@@ -75,25 +79,22 @@ public:
             // Offer options to the user
             char choice;
             cout << "\nOptions:\n";
-            cout << "d - Delete an email\n";
-            cout << "p - Star email\n";
+            cout << "x - Unstar email\n";
             cout << "m - Return to the main menu\n";
             cout << "Enter your choice: ";
             cin >> choice;
 
-            if (choice == 'd' || choice == 'D') {
-                deleteEmail();
-            }
-            else if (choice == 'p' || choice == 'P') {
-                starEmail();
+            if (choice == 'x' || choice == 'X') {
+                unstarEmail(userEmail);
             }
             else if (choice == 'm' || choice == 'M') {
+                star_priorityQueue.clearQueue();
 
                 clearscreen();
                 cout << "Back to the menu...\n";
                 this_thread::sleep_for(chrono::seconds(1));
                 clearscreen();
-                OutboxMenu = false; // Exit the loop to return to the main menu
+                StarPrioMenu = false; // Exit the loop to return to the main menu
             }
             else {
                 clearscreen();
@@ -104,7 +105,7 @@ public:
 
             // Save the updated emails (including spam status) and free the linked list memory
             saveEmails(front, userEmail);
-            outbox_emailQueue.clearQueue();
+            star_priorityQueue.clearQueue();
         }
     }
 
@@ -125,64 +126,55 @@ private:
         }
         return time.substr(0, 2) + ":" + time.substr(2, 2) + ":" + time.substr(4, 2);
     }
-    
+
 
     // Function to load emails into a linked list, filtering only those for the current user
     void loadEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
-            cerr << "Failed to open email.txt\n";
+            cerr << "\033[31mFailed to open email.txt\033[0m\n";
             return;
         }
 
-        outbox_emailQueue.clearQueue();
+        star_priorityQueue.clearQueue();
 
         string line;
         while (getline(emailFile, line)) {
-            outbox_emailQueue.enqueue(line, userEmail);
+            star_priorityQueue.enqueue(line, userEmail);
         }
 
         emailFile.close();
     }
 
-
-    // Function to delete an email
-    void deleteEmail() {
-        if (outbox_emailQueue.empty()) {
-            cout << "\033[33mNo emails available to delete.\033[0m\n";
-            return;
-        }
-
-        // Display the emails with index numbers to the user
-        cout << "\nEnter the number of the email you want to delete: ";
-        int index;
-        cin >> index;
-
-        // Dequeue the selected email
-        outbox_emailQueue.dequeue(index);
-    }
-
-
-    // Function to star an email
-    void starEmail() {
-        if (outbox_emailQueue.empty()) {
+    // Function to unstar an email
+    void unstarEmail(const string& userEmail) {
+        if (star_priorityQueue.empty()) {
             cout << "\033[33mNo emails available to star.\033[0m\n";
             return;
         }
 
         // Display the emails with index numbers to the user
-        cout << "\nEnter the number of the email you want to star: ";
+        cout << "\nEnter the number of the email you want to unstar: ";
         int index;
         cin >> index;
+        
+        // Get the selected email
+        Email* selectedEmail = star_priorityQueue.getEmail(index, userEmail);
 
-        // Star the selected email
-        Email* selectedEmail = outbox_emailQueue.getEmail(index);
-
+        /* Unstar the user selected email */
         if (selectedEmail != nullptr) {
-            // Mark the email as deleted for the receiver
-            selectedEmail->senderStared = true;
+
+            // Outbox email
+            if (userEmail == selectedEmail->sender) {
+                selectedEmail->senderStared = false;
+            }
+            else if (userEmail == selectedEmail->receiver) {
+                selectedEmail->receiverStared = false;
+            }
+
+            // Unstar success message
             clearscreen();
-            cout << "\033[32mEmail starred successfully.\033[0m\n";
+            cout << "\033[32mEmail unstar successfully.\033[0m\n";
             this_thread::sleep_for(chrono::seconds(1));
             clearscreen();
             return;
@@ -190,7 +182,7 @@ private:
         else {
             // If the index is out of bounds or invalid
             clearscreen();
-            cout << "\033[31mInvalid choice. No email was starred.\033[0m\n";
+            cout << "\033[31mInvalid choice. No email was deleted.\033[0m\n";
             this_thread::sleep_for(chrono::seconds(1));
             clearscreen();
             return;
@@ -232,17 +224,23 @@ private:
             getline(iss, markSpamStr);
 
             // Check if this email belongs to the current user and if it needs to be saved
-            if (sender == userEmail) {
-                // Update the `senderDeleted` and `senderStared` flag if the email is found in the queue
+            if (sender == userEmail || receiver == userEmail) {
+                // Update the `senderStared` and `receiverStared` flag if the email is found in the queue
                 if (current != nullptr && current->subject == subject && current->sender == sender &&
                     current->receiver == receiver && current->date == date && current->time == time &&
                     current->content == content) {
-                    outFile << receiverDeletedStr << ","<< (current->senderDeleted ? "1" : "0") << "," 
-                        << (current->senderStared ? "1" : "0") << "," << receiverStaredStr << ","
+                    outFile << receiverDeletedStr << "," << senderDeletedStr << ","
+                        << (current->senderStared ? "1" : "0") << "," << (current->receiverStared ? "1" : "0") << ","
                         << subject << "," << sender << ","
                         << receiver << "," << date << "," << time << ","
                         << content << "," << isSpamStr << "," << markSpamStr << "\n";
                     current = current->next;
+                }
+                else {
+                    outFile << receiverDeletedStr << "," << senderDeletedStr << ","
+                        << senderStaredStr << "," << receiverStaredStr << ","
+                        << subject << "," << sender << "," << receiver << ","
+                        << date << "," << time << "," << content << "," << isSpamStr << "," << markSpamStr << "\n";
                 }
             }
             else {
@@ -260,4 +258,4 @@ private:
     }
 };
 
-#endif // OUTBOX_MANAGER_HPP
+#endif // STAR_PRIO_HPP

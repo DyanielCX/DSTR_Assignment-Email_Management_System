@@ -146,6 +146,7 @@
     <ClInclude Include="OutboxManager.hpp" />
     <ClInclude Include="SearchRetrieval.hpp" />
     <ClInclude Include="SpamManager.hpp" />
+    <ClInclude Include="StarPrio.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
