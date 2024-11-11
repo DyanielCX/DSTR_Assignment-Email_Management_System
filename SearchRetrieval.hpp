@@ -5,7 +5,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "DataStruc.hpp"
+#include "DataStruc.hpp" // Include your custom DataStruc with EmailStack
 #include "Utils.hpp"
 
 using namespace std;
@@ -64,7 +64,7 @@ public:
             }
 
             Email* searchResults = performSearch(choice, searchTerm, userEmail);
-            stack<Email*> emailStack = createStackFromLinkedList(searchResults);
+            EmailStack emailStack = createStackFromLinkedList(searchResults); // Using EmailStack
             displayResults(emailStack, userEmail);
 
             clearscreen();
@@ -187,8 +187,8 @@ private:
         return head;
     }
 
-    stack<Email*> createStackFromLinkedList(Email* head) {
-        stack<Email*> emailStack;
+    EmailStack createStackFromLinkedList(Email* head) { // Using EmailStack
+        EmailStack emailStack;
         while (head) {
             emailStack.push(head);
             head = head->next;
@@ -196,16 +196,16 @@ private:
         return emailStack;
     }
 
-    // Updated to show starred status in display results
-    void displayResults(stack<Email*> results, const string& userEmail) {
+    // Inside the displayResults function of SearchRetrieval class
+    void displayResults(EmailStack& results, const string& userEmail) {
         if (results.empty()) {
             cout << "\033[31mNo emails found matching your search criteria.\033[0m\n";
         }
         else {
             int count = 1;
             while (!results.empty()) {
-                Email* email = results.top();
-                results.pop();
+                Email* email = results.top(); // Get top item
+                results.pop();                // Remove top item
 
                 cout << "\033[32m---------------------------------------------\n";
                 cout << "\033[33mEmail " << count++ << " ";
@@ -245,6 +245,7 @@ private:
         cout << "\nPress Enter to return to the search menu...";
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
+
 
     int compareDateTime(Email* email1, Email* email2) {
         if (email1->date != email2->date) return email1->date > email2->date ? 1 : -1;

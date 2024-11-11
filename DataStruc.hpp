@@ -27,6 +27,53 @@ struct Email {
     Email* next = nullptr; // Pointer to the next Email in the linked list
 };
 
+class EmailStack {
+private:
+	struct StackNode {
+		Email* email;
+		StackNode* next;
+		StackNode(Email* e) : email(e), next(nullptr) {}
+	};
+
+	StackNode* topNode;
+
+public:
+	EmailStack() : topNode(nullptr) {}
+
+	// Push an email onto the stack
+	void push(Email* email) {
+		StackNode* newNode = new StackNode(email);
+		newNode->next = topNode;
+		topNode = newNode;
+	}
+
+	// Check if the stack is empty
+	bool empty() const {
+		return topNode == nullptr;
+	}
+
+	// Peek at the top item without removing it
+	Email* top() const {
+		return topNode ? topNode->email : nullptr;
+	}
+
+	// Pop the top item from the stack
+	void pop() {
+		if (!empty()) {
+			StackNode* temp = topNode;
+			topNode = topNode->next;
+			delete temp;
+		}
+	}
+
+	// Clear the stack
+	void clear() {
+		while (!empty()) {
+			pop();
+		}
+	}
+};
+
 
 class outboxEmail_Queue{
 private:

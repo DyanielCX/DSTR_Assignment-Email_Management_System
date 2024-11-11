@@ -1,4 +1,4 @@
-0,0,0,0,DSTR Assignment Due Date Reminder,tp063370@mail.com,tp065406@mail.com,20241111,125859,Today 4:59 p.m. need to submit DSTR assignment!!!,1,1
+0,0,0,0,DSTR Assignment Due Date Reminder,tp063370@mail.com,tp065406@mail.com,20241111,125859,Today 4:59 p.m. need to submit DSTR assignment!!!,0,0
 0,0,0,0,DSTR is extended,tp063370@mail.com,tp065406@mail.com,20241111,130040,DSTR is extended until end of November,0,0
-0,0,0,0,DSTR is submitted,tp063370@mail.com,tp065406@mail.com,20241111,130214,Your project is submitted successfully.,1,1
-0,0,0,0,DSTR assignment is marked,tp063370@mail.com,tp065406@mail.com,20241111,130439,Your result for DSTR assignment is A+. Congrats!!!,1,1
+0,0,0,0,DSTR is submitted,tp063370@mail.com,tp065406@mail.com,20241111,130214,Your project is submitted successfully.,0,0
+0,0,0,0,DSTR assignment is marked,tp063370@mail.com,tp065406@mail.com,20241111,130439,Your result for DSTR assignment is A+. Congrats!!!,0,0
