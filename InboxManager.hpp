@@ -27,6 +27,10 @@ public:
         stack<Email*> emailStack = loadEmailsToStack(userEmail);
        
         while (inInboxMenu) {
+            cout << "\033[36m**************************************************\n";
+            cout << "*                Inbox Management                *\n";
+            cout << "**************************************************\033[0m\n";
+
             stack<Email*> tempStack = emailStack;
 
             bool hasDisplayableEmail = false;
@@ -54,7 +58,7 @@ public:
             }
 
             if (!hasDisplayableEmail) {
-                cout << "No emails found for " << userEmail << ".\n";
+                cout << "\033[31mNo emails found for " << userEmail << ".\033[0m\n";
                 char choice;
                 do {
                     cout << "Enter 'm' to go back to the main menu: ";

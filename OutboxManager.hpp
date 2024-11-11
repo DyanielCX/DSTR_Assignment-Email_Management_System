@@ -23,6 +23,10 @@ public:
     void displayOutbox(const string& userEmail) {
         bool OutboxMenu = true;
         while (OutboxMenu) {
+            cout << "\033[36m**************************************************\n";
+            cout << "*               Outbox Management                *\n";
+            cout << "**************************************************\033[0m\n";
+
             loadEmails(userEmail);
 
             // Get the front email in queue
@@ -51,7 +55,7 @@ public:
 
             // If no non-spam emails were found, or if the list is empty, inform the user
             if (outbox_emailQueue.empty()) {
-                cout << "No emails found for " << userEmail << ".\n";
+                cout << "\033[31mNo emails found for " << userEmail << ".\033[0m\n";
                 char choice;
                 do {
                     cout << "Enter 'm' to go back to the main menu: ";

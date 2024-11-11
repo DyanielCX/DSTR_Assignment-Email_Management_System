@@ -24,6 +24,10 @@ public:
         bool StarPrioMenu = true;
         while (StarPrioMenu) {
             
+            cout << "\033[36m**************************************************\n";
+            cout << "*                Starred Email                  *\n";
+            cout << "**************************************************\033[0m\n";
+
             // Clear queue and load email into queue
             star_priorityQueue.clearQueue();
             loadEmails(userEmail);
@@ -55,7 +59,7 @@ public:
 
             // If no non-spam emails were found, or if the list is empty, inform the user
             if (star_priorityQueue.highEmpty()) {
-                cout << "\033[31mNo emails found for \033[0m" << userEmail << ".\n";
+                cout << "\033[31mNo emails found for " << userEmail << ".\033[0m\n";
                 char choice;
                 do {
                     cout << "Enter 'm' to go back to the main menu: ";

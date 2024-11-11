@@ -24,9 +24,9 @@ public:
         // Create a new email
         Email* newEmail = new Email();
 
-        cout << "**************************************************" << endl;
+        cout << "\033[36m**************************************************" << endl;
         cout << "*                  Send Email                    *" << endl;
-        cout << "**************************************************" << endl;
+        cout << "**************************************************\033[0m" << endl;
 
         // Clear the input buffer before using getline
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
