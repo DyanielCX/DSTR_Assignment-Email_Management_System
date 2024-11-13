@@ -31,17 +31,20 @@ private:
         string line;
         bool updated = false;
 
-        // Read and update password
+        // Read each line and update the password for the matching email
         while (getline(file, line)) {
             istringstream iss(line);
             string fileEmail, filePassword;
 
+            // Parse email and password from each line
             if (getline(iss, fileEmail, ',') && getline(iss, filePassword)) {
+                // Trim whitespace from parsed email and password
                 fileEmail.erase(0, fileEmail.find_first_not_of(" \t"));
                 fileEmail.erase(fileEmail.find_last_not_of(" \t") + 1);
                 filePassword.erase(0, filePassword.find_first_not_of(" \t"));
                 filePassword.erase(filePassword.find_last_not_of(" \t") + 1);
 
+                // If email matches, update the password in the buffer
                 if (fileEmail == email) {
                     buffer << fileEmail << ", " << newPassword << "\n";
                     updated = true;
@@ -58,13 +61,13 @@ private:
             return false;
         }
 
-        // Write updated content to file
-        ofstream outFile(filename);
+        // Write updated content to file, overwriting original file
+        ofstream outFile(filename, ios::trunc); // Use ios::trunc to clear the file content
         if (!outFile.is_open()) {
             cerr << color_red << "Error: Could not write to file " << filename << color_reset << "\n";
             return false;
         }
-        outFile << buffer.str();
+        outFile << buffer.str(); // Write buffer contents to file
         outFile.close();
 
         return true;

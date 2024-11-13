@@ -124,7 +124,7 @@ private:
         return resultHead;
     }
 
-    // Updated function to parse the new Email structure, including starred status
+    
     Email* loadUserEmails(const string& userEmail) {
         ifstream emailFile("email.txt");
         if (!emailFile.is_open()) {
